@@ -189,17 +189,22 @@ void calculate_columns(
 
     std::cout<< "Setting up variables for input branches" << std::endl;
 
+    //For both genMC and accMC/data:
+
     double EnP1 = -999.0, EnP2 = -999.0, EnP3 = -999.0, EnPB = -999.0;
     double PxP1 = -999.0, PxP2 = -999.0, PxP3 = -999.0, PxPB = -999.0;
     double PyP1 = -999.0, PyP2 = -999.0, PyP3 = -999.0, PyPB = -999.0;
     double PzP1 = -999.0, PzP2 = -999.0, PzP3 = -999.0, PzPB = -999.0;
+    double Weight = 1.0;
+
+    //Only for accMC/data:
+
     double REnP1 = -999.0, REnP2 = -999.0, REnP3 = -999.0, REnPB = -999.0;
     double RPxP1 = -999.0, RPxP2 = -999.0, RPxP3 = -999.0, RPxPB = -999.0;
     double RPyP1 = -999.0, RPyP2 = -999.0, RPyP3 = -999.0, RPyPB = -999.0;
     double RPzP1 = -999.0, RPzP2 = -999.0, RPzP3 = -999.0, RPzPB = -999.0;
     double Chi2NDF = -999.0;
     int Chi2NDFpipi = -999;
-    double Weight = 1.0;
     double RFDeltaT = -999.0;
     double AccidentalScale = -999.0;
     double KSFlightSignificance = -999.0;
@@ -211,17 +216,13 @@ void calculate_columns(
 
     std::cout<< "Setting up variables for output branches" << std::endl;
 
-    double PolarizationDegree = -999.0;
+    // For both genMC and accMC/data:
 
+    double PolarizationDegree = -999.0;
     double MandelstamNegT = 999.0;
-    
     double MesonResonanceMass = -999.0;
     double BaryonResonanceMass2 = -999.0;
     double BaryonResonanceMass3 = -999.0;
-    double MissingMass = -999.0;
-    double Chi2pipiMinusChi2KK = -999.0;
-    double NumUnusedShowers = -999.0;
-    double NumUnusedTracks = -999.0;
 
     double PolarizationAngleReac = -999.0;
     double helCosTheta = -999.0;
@@ -232,13 +233,21 @@ void calculate_columns(
     double PolarizationAngleLab = -999.0;
     double labCosTheta = -999.0;
     double labPhi=-999.0;
-    int Chi2DOFRankGlobal = -999;
-    int Chi2DOFRank = -999;
 
     std::vector<double> d;
     d.resize((maxL+1)*(maxL+2)/2);
     std::vector<double> cosMphis;
     cosMphis.resize(maxL+1);
+
+    //Only for accMC/data:
+
+    double MissingMass = -999.0;
+    double Chi2pipiMinusChi2KK = -999.0;
+    double NumUnusedShowers = -999.0;
+    double NumUnusedTracks = -999.0;
+    
+    int Chi2DOFRankGlobal = -999;
+    int Chi2DOFRank = -999;
 
     // ============================================
     // Setting Input Branch Addresses
@@ -246,6 +255,7 @@ void calculate_columns(
 
     std::cout<< "Setting input branch addresses" << std::endl;
 
+    input_tree->SetBranchAddress("PolarizationAngle", &PolarizationAngleLab);
     if (!isGenMC) {
         input_tree->SetBranchAddress("RVzP1",&ProtonVertexZ);
         input_tree->SetBranchAddress("EnPB", &EnPB);
@@ -276,6 +286,15 @@ void calculate_columns(
         input_tree->SetBranchAddress("RFDeltaT",&RFDeltaT);
         input_tree->SetBranchAddress("NumUnusedTracks",&NumUnusedTracks);
         input_tree->SetBranchAddress("NumNeutralHypos",&NumUnusedShowers);
+        input_tree->SetBranchAddress("Chi2DOF",&Chi2NDF);
+        friend_tree->SetBranchAddress("Chi2DOFRank",&Chi2DOFRank);
+        friend_tree->SetBranchAddress("Chi2DOFRankGlobal",&Chi2DOFRankGlobal);
+        if (use_chi2diff) {
+            friend_tree->SetBranchAddress("Chi2DOFRankVarBestOther", &Chi2NDFpipi);
+        }
+        if (ks_sideband) {
+            input_tree->SetBranchAddress("VeeLSigmaP2",&KSFlightSignificance);
+        }
         if (std::string(final_state) == "kpkm") {
             input_tree->SetBranchAddress("EnP3", &EnP3);
             input_tree->SetBranchAddress("PxP3", &PxP3);
@@ -286,6 +305,7 @@ void calculate_columns(
             input_tree->SetBranchAddress("RPyP3", &RPyP3);
             input_tree->SetBranchAddress("RPzP3", &RPzP3);
         }
+        input_tree->SetBranchAddress("AccidentalScale", &AccidentalScale);
     } else {
         input_tree->SetBranchAddress("MCEnPB", &EnPB);
         input_tree->SetBranchAddress("MCPxPB", &PxPB);
@@ -306,29 +326,15 @@ void calculate_columns(
             input_tree->SetBranchAddress("MCPzP3", &PzP3);
         }
     }
-    if (!isGenMC) {
-        input_tree->SetBranchAddress("Chi2DOF",&Chi2NDF);
-        friend_tree->SetBranchAddress("Chi2DOFRank",&Chi2DOFRank);
-        friend_tree->SetBranchAddress("Chi2DOFRankGlobal",&Chi2DOFRankGlobal);
-        if (use_chi2diff) {
-            friend_tree->SetBranchAddress("Chi2DOFRankVarBestOther", &Chi2NDFpipi);
-        }
-        if (ks_sideband) {
-            input_tree->SetBranchAddress("VeeLSigmaP2",&KSFlightSignificance);
-        }
-    }
 
-    input_tree->SetBranchAddress("PolarizationAngle", &PolarizationAngleLab);
-    if (!isGenMC) {
-        input_tree->SetBranchAddress("AccidentalScale", &AccidentalScale);
-    }
     // ============================================
     // Set up output branches
     // ============================================
 
     std::cout<< "Setting up output branches" << std::endl;
 
-    // General variables
+    // For both genMC and accMC/data:
+
     output_tree->Branch("PolarizationAngleReac", &PolarizationAngleReac, "PolarizationAngleReac/D");
     output_tree->Branch("MandelstamNegT", &MandelstamNegT, "MandelstamNegT/D");
     output_tree->Branch("PolarizationDegree", &PolarizationDegree, "PolarizationDegree/D");
@@ -345,19 +351,6 @@ void calculate_columns(
     output_tree->Branch("BeamEnergy", &EnPB, "BeamEnergy/D");
     
     output_tree->Branch("PolarizationAngleLab", &PolarizationAngleLab, "PolarizationAngleLab/D");
-    output_tree->Branch("ProtonVertexZ",&ProtonVertexZ,"ProtonVertexZ/D");
-    output_tree->Branch("MissingMass",&MissingMass,"MissingMass/D");
-    output_tree->Branch("NumUnusedShowers",&NumUnusedShowers,"NumUnusedShowers/D");
-    output_tree->Branch("NumUnusedTracks",&NumUnusedTracks,"NumUnusedTracks/D");
-    if (!isGenMC) {
-        output_tree->Branch("Chi2NDF",&Chi2NDF, "Chi2NDF/D");
-        if (ks_sideband) {
-            output_tree->Branch("KSFlightSignificance",&KSFlightSignificance,"KSFlightSignificance/D");
-        }
-    }
-    if (use_chi2diff) {
-        output_tree->Branch("Chi2pipiMinusChi2KK", &Chi2pipiMinusChi2KK, "Chi2pipiMinusChi2KK/D");
-    }
     output_tree->Branch("labCosTheta",&labCosTheta, "labCosTheta/D");
     output_tree->Branch("labPhi",&labPhi, "labPhi/D");
     for (int L = 0; L<= maxL; L++) {
@@ -368,6 +361,24 @@ void calculate_columns(
         }
     }
     output_tree->Branch("Weight", &Weight,"Weight/D");
+
+    // Only for accMC:
+    
+    if (!isGenMC) {
+        output_tree->Branch("ProtonVertexZ",&ProtonVertexZ,"ProtonVertexZ/D");
+        output_tree->Branch("NumUnusedShowers",&NumUnusedShowers,"NumUnusedShowers/D");
+        output_tree->Branch("NumUnusedTracks",&NumUnusedTracks,"NumUnusedTracks/D");
+        output_tree->Branch("Chi2NDF",&Chi2NDF, "Chi2NDF/D");
+        if (ks_sideband) {
+            output_tree->Branch("KSFlightSignificance",&KSFlightSignificance,"KSFlightSignificance/D");
+            output_tree->Branch("MissingMass",&MissingMass,"MissingMass/D");
+        }
+        if (use_chi2diff) {
+            output_tree->Branch("Chi2pipiMinusChi2KK", &Chi2pipiMinusChi2KK, "Chi2pipiMinusChi2KK/D");
+        }
+    }
+    
+    
 
     // ============================================
     // Loop over events and fill output tree
@@ -388,6 +399,8 @@ void calculate_columns(
     for (Long64_t entry = 0; entry < nEntries; entry++) {
         // Load entry
         input_tree->GetEntry(entry);
+
+        // Skip events early on (if accMC or data) if their chi2 rank is not 1.
         
         if (!isGenMC) {
             friend_tree->GetEntry(entry);
@@ -401,18 +414,26 @@ void calculate_columns(
                 }
             }
         }
-	if (std::string(final_state) == "kskl") {
+
+        // Set up KL 4-vector if final state is kskl.
+
+        if (std::string(final_state) == "kskl") {
             PxP3 = PxPB - PxP1 - PxP2;
             PyP3 = PyPB - PyP1 - PyP2;
             PzP3 = PzPB - PzP1 - PzP2;
             EnP3 = 0.938 + EnPB - EnP1 - EnP2;
+        }
+
+        MesonResonanceMass = sqrt((EnP2+EnP3)*(EnP2+EnP3)-(PxP2+PxP3)*(PxP2+PxP3)-(PyP2+PyP3)*(PyP2+PyP3)-(PzP2+PzP3)*(PzP2+PzP3));
+
+	    if (std::string(final_state) == "kskl") {
             MandelstamNegT=2*0.938*(0.938-EnP1)-(pow(MesonResonanceMass,4)/(4*0.938)-pow(sqrt(pow(FSMath::boostEnergy(PxP1,PyP1,PxP1,EnP1,PxPB,PyPB,PzPB,EnPB+0.938),2)-0.938*0.938)-sqrt(pow(FSMath::boostEnergy(0,0,0,0.938,PxPB,PyPB,PzPB,EnPB+0.938),2)-0.938*0.938),2)); 
-            MissingMass = sqrt(pow(((REnPB+0.938272)-(REnP1+REnP2)),2)-pow(((RPxPB+0.0)-(RPxP1+RPxP2)),2)-pow(((RPyPB+0.0)-(RPyP1+RPyP2)),2)-pow(((RPzPB+0.0)-(RPzP1+RPzP2)),2));
+            if (!isGenMC) {
+                MissingMass = sqrt(pow(((REnPB+0.938272)-(REnP1+REnP2)),2)-pow(((RPxPB+0.0)-(RPxP1+RPxP2)),2)-pow(((RPyPB+0.0)-(RPyP1+RPyP2)),2)-pow(((RPzPB+0.0)-(RPzP1+RPzP2)),2));
+            }
         } else {
             MandelstamNegT = (PxPB-PxP2-PxP3)*(PxPB-PxP2-PxP3)+(PyPB-PyP2-PyP3)*(PyPB-PyP2-PyP3)+(PzPB-PzP2-PzP3)*(PzPB-PzP2-PzP3)-(EnPB-EnP2-EnP3)*(EnPB-EnP2-EnP3);
-            MissingMass = sqrt(pow(((REnPB+0.938272)-(REnP1+REnP2+REnP3)),2)-pow(((RPxPB+0.0)-(RPxP1+RPxP2+RPxP3)),2)-pow(((RPyPB+0.0)-(RPyP1+RPyP2+RPyP3)),2)-pow(((RPzPB+0.0)-(RPzP1+RPzP2+RPzP3)),2));
         }
-        MesonResonanceMass = sqrt((EnP2+EnP3)*(EnP2+EnP3)-(PxP2+PxP3)*(PxP2+PxP3)-(PyP2+PyP3)*(PyP2+PyP3)-(PzP2+PzP3)*(PzP2+PzP3));
         BaryonResonanceMass2 = sqrt((EnP1+EnP2)*(EnP1+EnP2)-(PxP1+PxP2)*(PxP1+PxP2)-(PyP1+PyP2)*(PyP1+PyP2)-(PzP2+PzP1)*(PzP2+PzP1));
         BaryonResonanceMass3 = sqrt((EnP1+EnP3)*(EnP1+EnP3)-(PxP1+PxP3)*(PxP1+PxP3)-(PyP1+PyP3)*(PyP1+PyP3)-(PzP3+PzP1)*(PzP3+PzP1));
         PolarizationDegree = get_polarization(PolarizationAngleLab, EnPB);
@@ -460,6 +481,8 @@ void calculate_columns(
                 if (abs(KS_mass-0.5)>0.04 && abs(KS_mass-0.5) < 0.06) {
                     Weight *= -1.0;
                 } else if (abs(KS_mass-0.5) > 0.02 && abs(KS_mass-0.5)<0.04) {
+                    continue;
+                } else if (abs(KS_mass-0.5)>0.06) {
                     continue;
                 }
             }

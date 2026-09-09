@@ -266,9 +266,17 @@ class MomentsArray {
                 double d_l_m_0 = d_lm0(L, M, helCosTheta);
                 double cosMphi = cos(M*helPhi);
                 H[getMomentIndex(0,L,M)] = d_l_m_0*cosMphi/(2*TMath::Pi());
-                H[getMomentIndex(1,L,M)] = d_l_m_0*cosMphi*cos(2.*PolarizationAngleReac)/(PolarizationDegree*TMath::Pi());
+                if (PolarizationDegree <= 1e-6) {
+                    H[getMomentIndex(1,L,M)]=0;
+                } else {
+                    H[getMomentIndex(1,L,M)] = d_l_m_0*cosMphi*cos(2.*PolarizationAngleReac)/(PolarizationDegree*TMath::Pi());
+                }
                 if (M != 0) {
-                    H[getMomentIndex(2, L, M)] = -1.0*d_l_m_0*sin(M*helPhi)*sin(2.*PolarizationAngleReac)/(PolarizationDegree*TMath::Pi());
+                    if (PolarizationDegree <= 1e-6) {
+                        H[getMomentIndex(2, L, M)]=0;
+                    } else {
+                        H[getMomentIndex(2, L, M)] = -1.0*d_l_m_0*sin(M*helPhi)*sin(2.*PolarizationAngleReac)/(PolarizationDegree*TMath::Pi());
+                    }
                 }
             }
         }
