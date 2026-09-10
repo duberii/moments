@@ -422,18 +422,13 @@ void calculate_columns(
             PyP3 = PyPB - PyP1 - PyP2;
             PzP3 = PzPB - PzP1 - PzP2;
             EnP3 = 0.938 + EnPB - EnP1 - EnP2;
-        }
-
-        MesonResonanceMass = sqrt((EnP2+EnP3)*(EnP2+EnP3)-(PxP2+PxP3)*(PxP2+PxP3)-(PyP2+PyP3)*(PyP2+PyP3)-(PzP2+PzP3)*(PzP2+PzP3));
-
-	    if (std::string(final_state) == "kskl") {
-            MandelstamNegT=2*0.938*(0.938-EnP1)-(pow(MesonResonanceMass,4)/(4*0.938)-pow(sqrt(pow(FSMath::boostEnergy(PxP1,PyP1,PxP1,EnP1,PxPB,PyPB,PzPB,EnPB+0.938),2)-0.938*0.938)-sqrt(pow(FSMath::boostEnergy(0,0,0,0.938,PxPB,PyPB,PzPB,EnPB+0.938),2)-0.938*0.938),2)); 
             if (!isGenMC) {
                 MissingMass = sqrt(pow(((REnPB+0.938272)-(REnP1+REnP2)),2)-pow(((RPxPB+0.0)-(RPxP1+RPxP2)),2)-pow(((RPyPB+0.0)-(RPyP1+RPyP2)),2)-pow(((RPzPB+0.0)-(RPzP1+RPzP2)),2));
             }
-        } else {
-            MandelstamNegT = (PxPB-PxP2-PxP3)*(PxPB-PxP2-PxP3)+(PyPB-PyP2-PyP3)*(PyPB-PyP2-PyP3)+(PzPB-PzP2-PzP3)*(PzPB-PzP2-PzP3)-(EnPB-EnP2-EnP3)*(EnPB-EnP2-EnP3);
         }
+
+        MesonResonanceMass = sqrt((EnP2+EnP3)*(EnP2+EnP3)-(PxP2+PxP3)*(PxP2+PxP3)-(PyP2+PyP3)*(PyP2+PyP3)-(PzP2+PzP3)*(PzP2+PzP3));
+        MandelstamNegT=-1*(pow(((0.938272)-(EnP1)),2)-pow(((0.0)-(PxP1)),2)-pow(((0.0)-(PyP1)),2)-pow(((0.0)-(PzP1)),2))+pow((pow(((EnPB+0.938272)-(EnP1)),2)-pow(((PxPB+0.0)-(PxP1)),2)-pow(((PyPB+0.0)-(PyP1)),2)-pow(((PzPB+0.0)-(PzP1)),2))/(2*(sqrt(pow(((EnPB+0.938272)),2)-pow(((PxPB+0.0)),2)-pow(((PyPB+0.0)),2)-pow(((PzPB+0.0)),2)))),2)-pow(sqrt(pow(FSMath::boostEnergy(0.0,0.0,0.0,0.938272,PxPB,PyPB,PzPB,EnPB+0.938272),2)-0.938*0.938)-sqrt(pow(FSMath::boostEnergy(PxP1,PyP1,PzP1,EnP1,PxPB,PyPB,PzPB,EnPB+0.938272),2)-0.938*0.938),2);
         BaryonResonanceMass2 = sqrt((EnP1+EnP2)*(EnP1+EnP2)-(PxP1+PxP2)*(PxP1+PxP2)-(PyP1+PyP2)*(PyP1+PyP2)-(PzP2+PzP1)*(PzP2+PzP1));
         BaryonResonanceMass3 = sqrt((EnP1+EnP3)*(EnP1+EnP3)-(PxP1+PxP3)*(PxP1+PxP3)-(PyP1+PyP3)*(PyP1+PyP3)-(PzP3+PzP1)*(PzP3+PzP1));
         PolarizationDegree = get_polarization(PolarizationAngleLab, EnPB);

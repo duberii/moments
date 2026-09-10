@@ -145,7 +145,7 @@ AnalysisInfo getAnalysisInfo(std::string dataset_name) {
             analysis_info.meson_mass_max = 2.56;
             analysis_info.n_bins = 17;
             analysis_info.global_cuts= "";
-            analysis_info.non_gen_MC_cuts = "KSFlightSignificance>6&&abs(BeamEnergy-8.3)<0.35&&abs(ProtonVertexZ-65)<23&&NumUnusedTracks==1&&NumUnusedShowers<3&&Chi2NDF<2&&abs(MissingMass-0.5)<0.3";
+            analysis_info.non_gen_MC_cuts = "KSFlightSignificance>6&&abs(BeamEnergy-8.3)<0.3&&abs(ProtonVertexZ-65)<23&&NumUnusedTracks<1&&NumUnusedShowers<3&&Chi2NDF<2&&abs(MissingMass-0.5)<0.3";
             analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{0}_{S}","K^{0}_{L}"});
         } else if (dataset_name =="XX") {
             analysis_info.genMC_path = "/home/rdube/scratch/moments_workflow/data/genMC_XX_pol*.root";
