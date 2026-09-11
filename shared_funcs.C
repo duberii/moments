@@ -103,96 +103,30 @@ AnalysisInfo getAnalysisInfo(std::string dataset_name) {
     AnalysisInfo analysis_info;
     analysis_info.tree_name = "decayAngles";
     analysis_info.output_path = "/N/u/rdube/Quartz/work/moments_workflow/results/";
-    if (dataset_name == "kpkm_phi") {
-            analysis_info.genMC_path = "/home/rdube/scratch/moments_workflow/data/genMC_kpkm_phi_pol*.root";
-            analysis_info.accMC_path = "/home/rdube/scratch/moments_workflow/data/accMC_kpkm_phi_pol*.root";
-            analysis_info.data_path = "/home/rdube/scratch/moments_workflow/data/data_kpkm_phi_pol*.root";
-            analysis_info.background_subtract = false;
-            analysis_info.meson_mass_min = 1.005;
-            analysis_info.meson_mass_max = 1.035;
-            analysis_info.global_cuts= TString::Format("MesonResonanceMass>%.3f&&MesonResonanceMass<%.3f&&abs(BeamEnergy - 8.3)< 0.3&&MandelstamNegT<0.4", analysis_info.meson_mass_min, analysis_info.meson_mass_max);
-            analysis_info.non_gen_MC_cuts = "Chi2pipiMinusChi2KK > 10 && Chi2NDF < 5";
-            analysis_info.n_bins = 100;
-            analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{+}","K^{-}"});
-    } else if (dataset_name == "kpkm_highM") {
-            analysis_info.genMC_path = "/home/rdube/scratch/moments_workflow/data/genMC_kpkm_highM_pol*.root";
-            analysis_info.accMC_path = "/home/rdube/scratch/moments_workflow/data/accMC_kpkm_highM_pol*.root";
-            analysis_info.data_path = "/home/rdube/scratch/moments_workflow/data/data_kpkm_highM_pol*.root";
-            analysis_info.background_subtract = false;
-            analysis_info.meson_mass_min = 1.2;
-            analysis_info.meson_mass_max = 2.6;
-            analysis_info.global_cuts= TString::Format("MesonResonanceMass>%.3f&&MesonResonanceMass<%.3f&&abs(BeamEnergy - 8.3)< 0.3&&MandelstamNegT<1", analysis_info.meson_mass_min, analysis_info.meson_mass_max);
-            analysis_info.non_gen_MC_cuts = "Chi2pipiMinusChi2KK > 10 && Chi2NDF < 5";
-            analysis_info.n_bins = 70;
-            analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{+}","K^{-}"});
-        } else if (dataset_name == "kskl") {
-            analysis_info.genMC_path = "/home/rdube/scratch/moments_workflow/data/genMC_kskl_pol*.root";
-            analysis_info.accMC_path = "/home/rdube/scratch/moments_workflow/data/accMC_kskl_pol*.root";
-            analysis_info.data_path = "/home/rdube/scratch/moments_workflow/data/data_kskl_pol*.root";
-            analysis_info.background_subtract = true;
-            analysis_info.meson_mass_min = 1.2;
-            analysis_info.meson_mass_max = 2.6;
-            analysis_info.n_bins = 70;
-            analysis_info.global_cuts= "";
-            analysis_info.non_gen_MC_cuts = "";
-            analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{0}_{S}","K^{0}_{L}"});
-        } else if (dataset_name =="kskl_spring_2020") {
-            analysis_info.genMC_path = "/N/slate/rdube/moments/kskl/Spring_2020/genMC_kskl_pol*.root";
-            analysis_info.accMC_path = "/N/slate/rdube/moments/kskl/Spring_2020/accMC_kskl_pol*.root";
-            analysis_info.data_path = "/N/slate/rdube/moments/kskl/Spring_2020/data_kskl_pol*.root";
-            analysis_info.background_subtract = true;
-            analysis_info.meson_mass_min = 1.2;
-            analysis_info.meson_mass_max = 2.56;
-            analysis_info.n_bins = 17;
-            analysis_info.global_cuts= "";
-            analysis_info.non_gen_MC_cuts = "KSFlightSignificance>6&&abs(BeamEnergy-8.3)<0.3&&abs(ProtonVertexZ-65)<23&&NumUnusedTracks<1&&NumUnusedShowers<3&&Chi2NDF<2&&abs(MissingMass-0.5)<0.3";
-            analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{0}_{S}","K^{0}_{L}"});
-        } else if (dataset_name =="XX") {
-            analysis_info.genMC_path = "/home/rdube/scratch/moments_workflow/data/genMC_XX_pol*.root";
-            analysis_info.accMC_path = "/home/rdube/scratch/moments_workflow/data/accMC_XX_pol*.root";
-            analysis_info.data_path = "/home/rdube/scratch/moments_workflow/data/data_XX_pol*.root";
-            analysis_info.meson_mass_min = 1.005;
-            analysis_info.meson_mass_max = 1.035;
-            analysis_info.global_cuts= "";
-            analysis_info.non_gen_MC_cuts = "";
-            analysis_info.background_subtract = false;
-            analysis_info.n_bins = 100;
-            analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{+}","K^{-}"});
-        } else if (dataset_name =="kpkm_phi_old") {
-            analysis_info.genMC_path = "/home/rdube/scratch/KK_analysis/data/precomputed/genMC_kpkm_phi_pol*.root";
-            analysis_info.accMC_path = "/home/rdube/scratch/KK_analysis/data/precomputed/accMC_kpkm_phi_pol*.root";
-            analysis_info.data_path = "/home/rdube/scratch/KK_analysis/data/precomputed/data_kpkm_phi_pol*.root";
-            analysis_info.meson_mass_min = 1.005;
-            analysis_info.meson_mass_max = 1.035;
-            analysis_info.n_bins = 100;
-            analysis_info.global_cuts= TString::Format("MesonResonanceMass>%.3f&&MesonResonanceMass<%.3f&&abs(BeamEnergy - 8.3)< 0.3&&MandelstamNegT<0.4", analysis_info.meson_mass_min, analysis_info.meson_mass_max);
-            analysis_info.non_gen_MC_cuts = "Chi2pipiMinusChi2KK > 10 && Chi2NDF < 5";
-            analysis_info.background_subtract = false;
-            analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{+}","K^{-}"});
-        } else if (dataset_name =="phi_genr8") {
-            analysis_info.genMC_path = "/N/u/rdube/Quartz/data/flattened_MC/phi_genr8/final/genMC_kpkm_phi_genr8.root";
-            analysis_info.accMC_path = "/N/u/rdube/Quartz/data/flattened_MC/phi_genr8/final/accMC_kpkm_phi_genr8.root";
-            analysis_info.data_path = "/N/u/rdube/Quartz/data/data/data_kpkm_phi_pol*.root";
-            analysis_info.meson_mass_min = 1.005;
-            analysis_info.meson_mass_max = 1.035;
-            analysis_info.global_cuts= "abs(BeamEnergy-8.3)<0.3&&MandelstamNegT<0.4";
-            analysis_info.non_gen_MC_cuts = "Chi2NDF<5&&Chi2pipiMinusChi2KK>10";
-            analysis_info.background_subtract = false;
-            analysis_info.n_bins = 30;
-            analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{+}","K^{-}"});
-        } else if (dataset_name =="phi_gen_amp_v2"){
-            analysis_info.genMC_path = "/N/u/rdube/Quartz/data/flattened_MC/phi_gen_amp_v2/final/genMC_kpkm_phi_gen_amp_v2.root";
-            analysis_info.accMC_path = "/N/u/rdube/Quartz/data/flattened_MC/phi_gen_amp_v2/final/accMC_kpkm_phi_gen_amp_v2.root";
-            analysis_info.data_path = "/N/u/rdube/Quartz/data/data/data_kpkm_phi_pol*.root";
-            analysis_info.meson_mass_min = 1.005;
-            analysis_info.meson_mass_max = 1.035;
-            analysis_info.global_cuts= "abs(BeamEnergy-8.3)<0.3&&MandelstamNegT<0.4";
-            analysis_info.non_gen_MC_cuts = "Chi2NDF<5&&Chi2pipiMinusChi2KK>10";
-            analysis_info.background_subtract = false;
-            analysis_info.n_bins = 30;
-            analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{+}","K^{-}"});
-        } else {
-            std::cout << "Analysis name not found." << std::endl;
+    if (dataset_name == "kpkm_highM") {
+        analysis_info.genMC_path = "/home/rdube/scratch/moments_workflow/data/genMC_kpkm_highM_pol*.root";
+        analysis_info.accMC_path = "/home/rdube/scratch/moments_workflow/data/accMC_kpkm_highM_pol*.root";
+        analysis_info.data_path = "/home/rdube/scratch/moments_workflow/data/data_kpkm_highM_pol*.root";
+        analysis_info.background_subtract = false;
+        analysis_info.meson_mass_min = 1.2;
+        analysis_info.meson_mass_max = 2.6;
+        analysis_info.global_cuts= TString::Format("MesonResonanceMass>%.3f&&MesonResonanceMass<%.3f&&abs(BeamEnergy - 8.3)< 0.3&&MandelstamNegT<1", analysis_info.meson_mass_min, analysis_info.meson_mass_max);
+        analysis_info.non_gen_MC_cuts = "Chi2pipiMinusChi2KK > 10 && Chi2NDF < 5";
+        analysis_info.n_bins = 70;
+        analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{+}","K^{-}"});
+    } else if (dataset_name =="kskl_spring_2020") {
+        analysis_info.genMC_path = "/N/slate/rdube/moments/kskl/Spring_2020/genMC_kskl_pol*.root";
+        analysis_info.accMC_path = "/N/slate/rdube/moments/kskl/Spring_2020/accMC_kskl_pol*.root";
+        analysis_info.data_path = "/N/slate/rdube/moments/kskl/Spring_2020/data_kskl_pol*.root";
+        analysis_info.background_subtract = true;
+        analysis_info.meson_mass_min = 1.2;
+        analysis_info.meson_mass_max = 2.56;
+        analysis_info.n_bins = 17;
+        analysis_info.global_cuts= "";
+        analysis_info.non_gen_MC_cuts = "KSFlightSignificance>6&&abs(BeamEnergy-8.3)<0.3&&abs(ProtonVertexZ-65)<23&&NumUnusedTracks<1&&NumUnusedShowers<3&&Chi2NDF<2&&abs(MissingMass-0.5)<0.3";
+        analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{0}_{S}","K^{0}_{L}"});
+    } else {
+        std::cout << "Analysis name not found." << std::endl;
     }
     return analysis_info;
 
