@@ -3,8 +3,6 @@
 
 
 void aggregate_results(const char* dataset_name, int maxL, int num_bootstraps) {
-    
-    
     AnalysisInfo analysis_info = getAnalysisInfo(dataset_name);
     std::vector<TString> figure_names;
     std::unique_ptr<TCanvas> canvas = std::make_unique<TCanvas>("canvas","canvas",700,500);
