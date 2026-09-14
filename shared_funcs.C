@@ -104,15 +104,15 @@ AnalysisInfo getAnalysisInfo(std::string dataset_name) {
     analysis_info.tree_name = "decayAngles";
     analysis_info.output_path = "/N/u/rdube/Quartz/work/moments_workflow/results/";
     if (dataset_name == "kpkm_highM") {
-        analysis_info.genMC_path = "/home/rdube/scratch/moments_workflow/data/genMC_kpkm_highM_pol*.root";
-        analysis_info.accMC_path = "/home/rdube/scratch/moments_workflow/data/accMC_kpkm_highM_pol*.root";
-        analysis_info.data_path = "/home/rdube/scratch/moments_workflow/data/data_kpkm_highM_pol*.root";
+        analysis_info.genMC_path = "/N/slate/rdube/moments/kpkm/highM/genMC_kpkm_pol*.root";
+        analysis_info.accMC_path = "/N/slate/rdube/moments/kpkm/highM/accMC_kpkm_pol*.root";
+        analysis_info.data_path = "/N/slate/rdube/moments/kpkm/highM/data_kpkm_pol*.root";
         analysis_info.background_subtract = false;
         analysis_info.meson_mass_min = 1.2;
-        analysis_info.meson_mass_max = 2.6;
-        analysis_info.global_cuts= TString::Format("MesonResonanceMass>%.3f&&MesonResonanceMass<%.3f&&abs(BeamEnergy - 8.3)< 0.3&&MandelstamNegT<1", analysis_info.meson_mass_min, analysis_info.meson_mass_max);
-        analysis_info.non_gen_MC_cuts = "Chi2pipiMinusChi2KK > 10 && Chi2NDF < 5";
-        analysis_info.n_bins = 70;
+        analysis_info.meson_mass_max = 2.56;
+        analysis_info.global_cuts= TString::Format("MesonResonanceMass>%.3f&&MesonResonanceMass<%.3f", analysis_info.meson_mass_min, analysis_info.meson_mass_max);
+        analysis_info.non_gen_MC_cuts = "Chi2pipiMinusChi2KK>10&&Chi2NDF<5&&abs(BeamEnergy - 8.3)< 0.3&&MandelstamNegT<1&&NumUnusedTracks==0&&NumUnusedShowers==0";
+        analysis_info.n_bins = 34;
         analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{+}","K^{-}"});
     } else if (dataset_name =="kskl_spring_2020") {
         analysis_info.genMC_path = "/N/slate/rdube/moments/kskl/Spring_2020/genMC_kskl_pol*.root";
@@ -121,9 +121,9 @@ AnalysisInfo getAnalysisInfo(std::string dataset_name) {
         analysis_info.background_subtract = true;
         analysis_info.meson_mass_min = 1.2;
         analysis_info.meson_mass_max = 2.56;
-        analysis_info.n_bins = 17;
-        analysis_info.global_cuts= "";
-        analysis_info.non_gen_MC_cuts = "KSFlightSignificance>6&&abs(BeamEnergy-8.3)<0.3&&abs(ProtonVertexZ-65)<23&&NumUnusedTracks<1&&NumUnusedShowers<3&&Chi2NDF<2&&abs(MissingMass-0.5)<0.3";
+        analysis_info.n_bins = 34;
+        analysis_info.global_cuts= TString::Format("MesonResonanceMass>%.3f&&MesonResonanceMass<%.3f", analysis_info.meson_mass_min, analysis_info.meson_mass_max);
+        analysis_info.non_gen_MC_cuts = "abs(BeamEnergy-8.3)<0.3&&abs(MandelstamNegT-0.45)<0.25&&abs(ProtonVertexZ-65)<13&&NumUnusedTracks==0&&NumUnusedShowers<3&&KSFlightSignificance>6&&Chi2NDF<2&&abs(MissingMass-0.5)<0.2";
         analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{0}_{S}","K^{0}_{L}"});
     } else {
         std::cout << "Analysis name not found." << std::endl;
@@ -200,17 +200,9 @@ class MomentsArray {
                 double d_l_m_0 = d_lm0(L, M, helCosTheta);
                 double cosMphi = cos(M*helPhi);
                 H[getMomentIndex(0,L,M)] = d_l_m_0*cosMphi/(2*TMath::Pi());
-                if (PolarizationDegree <= 1e-6) {
-                    H[getMomentIndex(1,L,M)]=0;
-                } else {
-                    H[getMomentIndex(1,L,M)] = d_l_m_0*cosMphi*cos(2.*PolarizationAngleReac)/(PolarizationDegree*TMath::Pi());
-                }
+                H[getMomentIndex(1,L,M)] = d_l_m_0*cosMphi*cos(2.*PolarizationAngleReac)/(PolarizationDegree*TMath::Pi());
                 if (M != 0) {
-                    if (PolarizationDegree <= 1e-6) {
-                        H[getMomentIndex(2, L, M)]=0;
-                    } else {
-                        H[getMomentIndex(2, L, M)] = -1.0*d_l_m_0*sin(M*helPhi)*sin(2.*PolarizationAngleReac)/(PolarizationDegree*TMath::Pi());
-                    }
+                    H[getMomentIndex(2, L, M)] = -1.0*d_l_m_0*sin(M*helPhi)*sin(2.*PolarizationAngleReac)/(PolarizationDegree*TMath::Pi());
                 }
             }
         }
