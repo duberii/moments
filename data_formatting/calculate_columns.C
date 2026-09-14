@@ -248,6 +248,7 @@ void calculate_columns(
     
     int Chi2DOFRankGlobal = -999;
     int Chi2DOFRank = -999;
+    double KSMass = -999.0;
 
     // ============================================
     // Setting Input Branch Addresses
@@ -305,7 +306,6 @@ void calculate_columns(
             input_tree->SetBranchAddress("RPyP3", &RPyP3);
             input_tree->SetBranchAddress("RPzP3", &RPzP3);
         }
-        input_tree->SetBranchAddress("AccidentalScale", &AccidentalScale);
     } else {
         input_tree->SetBranchAddress("MCEnPB", &EnPB);
         input_tree->SetBranchAddress("MCPxPB", &PxPB);
@@ -362,16 +362,18 @@ void calculate_columns(
     }
     output_tree->Branch("Weight", &Weight,"Weight/D");
 
-    // Only for accMC:
+    // Only for data/accMC:
     
     if (!isGenMC) {
         output_tree->Branch("ProtonVertexZ",&ProtonVertexZ,"ProtonVertexZ/D");
         output_tree->Branch("NumUnusedShowers",&NumUnusedShowers,"NumUnusedShowers/D");
         output_tree->Branch("NumUnusedTracks",&NumUnusedTracks,"NumUnusedTracks/D");
         output_tree->Branch("Chi2NDF",&Chi2NDF, "Chi2NDF/D");
+        output_tree->Branch("RFDeltaT",&RFDeltaT, "RFDeltaT/D");
         if (ks_sideband) {
             output_tree->Branch("KSFlightSignificance",&KSFlightSignificance,"KSFlightSignificance/D");
             output_tree->Branch("MissingMass",&MissingMass,"MissingMass/D");
+            output_tree->Branch("KSMass",&KSMass,"KSMass/D");
         }
         if (use_chi2diff) {
             output_tree->Branch("Chi2pipiMinusChi2KK", &Chi2pipiMinusChi2KK, "Chi2pipiMinusChi2KK/D");
@@ -424,6 +426,24 @@ void calculate_columns(
             EnP3 = 0.938 + EnPB - EnP1 - EnP2;
             if (!isGenMC) {
                 MissingMass = sqrt(pow(((REnPB+0.938272)-(REnP1+REnP2)),2)-pow(((RPxPB+0.0)-(RPxP1+RPxP2)),2)-pow(((RPyPB+0.0)-(RPyP1+RPyP2)),2)-pow(((RPzPB+0.0)-(RPzP1+RPzP2)),2));
+                KSMass = sqrt(EnP2*EnP2 - PxP2*PxP2 - PyP2*PyP2 - PzP2*PzP2);
+            }
+        }
+        if (!isGenMC) {
+            Weight = 1.0;
+            if (abs(RFDeltaT) > 6 && abs(RFDeltaT) < 14) {
+                Weight *= -0.25*AccidentalScale;
+            } else if (abs(RFDeltaT) > 2 && abs(RFDeltaT) < 6) {
+                continue;
+            }
+            if (ks_sideband) {
+                if (abs(KSMass-0.5)<0.02) {
+                    // Keep weight same
+                } else if (abs(KSMass-0.5)>0.04 && abs(KSMass-0.5) < 0.06) {
+                    Weight *= -1.0;
+                } else {
+                    continue;
+                }
             }
         }
 
@@ -462,24 +482,6 @@ void calculate_columns(
             for (int M = 0; M <= L; M++) {
                 int index = M+L*(L+1)/2;
                 d[index] = d_lm0(L,M,helCosTheta);
-            }
-        }
-        if (!isGenMC) {
-            Weight = 1.0;
-            if (abs(RFDeltaT) > 6 && abs(RFDeltaT) < 14) {
-                Weight *= -0.25;
-            } else if (abs(RFDeltaT) > 2 && abs(RFDeltaT) < 6) {
-                continue;
-            }
-            if (ks_sideband) {
-                double KS_mass = sqrt(EnP2*EnP2 - PxP2*PxP2-PyP2*PyP2 - PzP2*PzP2);
-                if (abs(KS_mass-0.5)>0.04 && abs(KS_mass-0.5) < 0.06) {
-                    Weight *= -1.0;
-                } else if (abs(KS_mass-0.5) > 0.02 && abs(KS_mass-0.5)<0.04) {
-                    continue;
-                } else if (abs(KS_mass-0.5)>0.06) {
-                    continue;
-                }
             }
         }
         // Fill output tree
