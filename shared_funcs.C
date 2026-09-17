@@ -107,11 +107,22 @@ AnalysisInfo getAnalysisInfo(std::string dataset_name) {
         analysis_info.genMC_path = "/N/slate/rdube/moments/kpkm/highM/genMC_kpkm_pol*.root";
         analysis_info.accMC_path = "/N/slate/rdube/moments/kpkm/highM/accMC_kpkm_pol*.root";
         analysis_info.data_path = "/N/slate/rdube/moments/kpkm/highM/data_kpkm_pol*.root";
-        analysis_info.background_subtract = false;
+        analysis_info.background_subtract = true;
         analysis_info.meson_mass_min = 1.2;
         analysis_info.meson_mass_max = 2.56;
         analysis_info.global_cuts= TString::Format("MesonResonanceMass>%.3f&&MesonResonanceMass<%.3f", analysis_info.meson_mass_min, analysis_info.meson_mass_max);
-        analysis_info.non_gen_MC_cuts = "Chi2pipiMinusChi2KK>10&&Chi2NDF<5&&abs(BeamEnergy - 8.3)< 0.3&&MandelstamNegT<1&&NumUnusedTracks==0&&NumUnusedShowers==0";
+        analysis_info.non_gen_MC_cuts = "Chi2pipiMinusChi2KK>10&&Chi2NDF<5&&abs(BeamEnergy - 8.3)< 0.3&&abs(MandelstamNegT-0.45)<0.25&&NumUnusedTracks==0&&NumUnusedShowers==0";
+        analysis_info.n_bins = 34;
+        analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{+}","K^{-}"});
+    } else if (dataset_name == "kpkm_highM_low_chi2") {
+        analysis_info.genMC_path = "/N/slate/rdube/moments/kpkm/highM/genMC_kpkm_pol*.root";
+        analysis_info.accMC_path = "/N/slate/rdube/moments/kpkm/highM/accMC_kpkm_pol*.root";
+        analysis_info.data_path = "/N/slate/rdube/moments/kpkm/highM/data_kpkm_pol*.root";
+        analysis_info.background_subtract = true;
+        analysis_info.meson_mass_min = 1.2;
+        analysis_info.meson_mass_max = 2.56;
+        analysis_info.global_cuts= TString::Format("MesonResonanceMass>%.3f&&MesonResonanceMass<%.3f", analysis_info.meson_mass_min, analysis_info.meson_mass_max);
+        analysis_info.non_gen_MC_cuts = "Chi2pipiMinusChi2KK>10&&Chi2NDF<2&&abs(BeamEnergy - 8.3)< 0.3&&abs(MandelstamNegT-0.45)<0.25&&NumUnusedTracks==0&&NumUnusedShowers==0";
         analysis_info.n_bins = 34;
         analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{+}","K^{-}"});
     } else if (dataset_name =="kskl_spring_2020") {
@@ -124,6 +135,28 @@ AnalysisInfo getAnalysisInfo(std::string dataset_name) {
         analysis_info.n_bins = 34;
         analysis_info.global_cuts= TString::Format("MesonResonanceMass>%.3f&&MesonResonanceMass<%.3f", analysis_info.meson_mass_min, analysis_info.meson_mass_max);
         analysis_info.non_gen_MC_cuts = "abs(BeamEnergy-8.3)<0.3&&abs(MandelstamNegT-0.45)<0.25&&abs(ProtonVertexZ-65)<13&&NumUnusedTracks==0&&NumUnusedShowers<3&&KSFlightSignificance>6&&Chi2NDF<2&&abs(MissingMass-0.5)<0.2";
+        analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{0}_{S}","K^{0}_{L}"});
+    } else if (dataset_name =="kskl_GlueX_I") {
+        analysis_info.genMC_path = "/N/slate/rdube/moments/kskl/GlueX_I/genMC_kskl_pol*.root";
+        analysis_info.accMC_path = "/N/slate/rdube/moments/kskl/GlueX_I/accMC_kskl_pol*.root";
+        analysis_info.data_path = "/N/slate/rdube/moments/kskl/GlueX_I/data_kskl_pol*.root";
+        analysis_info.background_subtract = true;
+        analysis_info.meson_mass_min = 1.2;
+        analysis_info.meson_mass_max = 2.56;
+        analysis_info.n_bins = 34;
+        analysis_info.global_cuts= TString::Format("MesonResonanceMass>%.3f&&MesonResonanceMass<%.3f", analysis_info.meson_mass_min, analysis_info.meson_mass_max);
+        analysis_info.non_gen_MC_cuts = "abs(BeamEnergy-8.5)<0.3&&abs(MandelstamNegT-0.45)<0.25";
+        analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{0}_{S}","K^{0}_{L}"});
+    }else if (dataset_name =="kskl_spring_2020_nobaryon") {
+        analysis_info.genMC_path = "/N/slate/rdube/moments/kskl/Spring_2020/genMC_kskl_pol*.root";
+        analysis_info.accMC_path = "/N/slate/rdube/moments/kskl/Spring_2020/accMC_kskl_pol*.root";
+        analysis_info.data_path = "/N/slate/rdube/moments/kskl/Spring_2020/data_kskl_pol*.root";
+        analysis_info.background_subtract = true;
+        analysis_info.meson_mass_min = 1.2;
+        analysis_info.meson_mass_max = 2.56;
+        analysis_info.n_bins = 34;
+        analysis_info.global_cuts= TString::Format("MesonResonanceMass>%.3f&&MesonResonanceMass<%.3f", analysis_info.meson_mass_min, analysis_info.meson_mass_max);
+        analysis_info.non_gen_MC_cuts = "abs(BeamEnergy-8.3)<0.3&&abs(MandelstamNegT-0.45)<0.25&&abs(ProtonVertexZ-65)<13&&NumUnusedTracks==0&&NumUnusedShowers<3&&KSFlightSignificance>6&&Chi2NDF<2&&abs(MissingMass-0.5)<0.2&&BaryonResonanceMass3>1.9";
         analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{0}_{S}","K^{0}_{L}"});
     } else {
         std::cout << "Analysis name not found." << std::endl;
@@ -354,8 +387,8 @@ class AcceptanceMatrix {
     , acceptance_matrices(std::vector<TMatrixD>(n_bins, TMatrixD(3*(max_l+1)*(max_l+2)/2 - max_l-1,3*(max_l+1)*(max_l+2)/2 - max_l-1))) {
         bin_size = (xMax-xMin)/nBins;
     }
-    void make_matrix_by_event(unsigned int thread_number, double PolarizationDegree, double helCosTheta, double helPhi, double PolarizationAngleReac, double MesonMass, int bootstrap_weight, double weight) {
-        if (bootstrap_weight == 0) {
+    void make_matrix_by_event(unsigned int thread_number, double PolarizationDegree, double helCosTheta, double helPhi, double PolarizationAngleReac, double MesonMass, double full_weight) {
+        if (full_weight == 0) {
             return;
         }
         MomentsArray moments(maxL, helCosTheta, helPhi, PolarizationAngleReac, PolarizationDegree);
@@ -379,15 +412,14 @@ class AcceptanceMatrix {
                 double moment_2 = moments.getMoment(colNo);
 
                 double nominal_prefactor = matrix_element_prefactor(alphaPrime, LPrime, MPrime, PolarizationDegree);
-                thread_matrices[thread_number][binNumber-1](rowNo,colNo) += weight*bootstrap_weight*nominal_prefactor*moment_1*moment_2;
+                thread_matrices[thread_number][binNumber-1](rowNo,colNo) += full_weight*nominal_prefactor*moment_1*moment_2;
                 if (rowNo != colNo) {
-                    thread_matrices[thread_number][binNumber-1](colNo,rowNo) += weight*bootstrap_weight*transpose_prefactor*moment_1*moment_2;
+                    thread_matrices[thread_number][binNumber-1](colNo,rowNo) += full_weight*transpose_prefactor*moment_1*moment_2;
                 }
             }
         }
     }
     void makeMatrix() {
-        
         std::cout << "finished foreachslot" << std::endl;
         for (int bin=0; bin< nBins; bin++) {
             for (int thread_num=0; thread_num < nThreads; thread_num++) {
@@ -395,21 +427,6 @@ class AcceptanceMatrix {
             }
             double n_gen_events_in_bin = genMC_hist->GetBinContent(bin+1);
             acceptance_matrices[bin] *= 1./n_gen_events_in_bin;
-        }
-    }
-    void saveMatrices(TFile* fout) {
-        fout->cd();
-        for (int bin = 0; bin < nBins; bin++) {
-            acceptance_matrices[bin].Write(TString::Format("acceptanceMatrix_%i",bin));
-            TH2D matrixHist(acceptance_matrices[bin]);
-            matrixHist.SetDirectory(nullptr);
-            matrixHist.Write(TString::Format("acceptanceMatrixHistogram_%i",bin));
-            TMatrixD inverse_matrix = acceptance_matrices[bin];
-            inverse_matrix.Invert();
-            inverse_matrix.Write(TString::Format("acceptanceMatrixInverse_%i",bin));
-            TH2D matrixHistInverse(inverse_matrix);
-            matrixHistInverse.SetDirectory(nullptr);
-            matrixHistInverse.Write(TString::Format("acceptanceMatrixHistogramInverse_%i",bin));
         }
     }
     double matrix_element_prefactor(int alpha, int L, int M, double PolarizationDegree) {
