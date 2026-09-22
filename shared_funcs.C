@@ -156,8 +156,19 @@ AnalysisInfo getAnalysisInfo(std::string dataset_name) {
         analysis_info.meson_mass_max = 2.56;
         analysis_info.n_bins = 34;
         analysis_info.global_cuts= TString::Format("MesonResonanceMass>%.3f&&MesonResonanceMass<%.3f", analysis_info.meson_mass_min, analysis_info.meson_mass_max);
-        analysis_info.non_gen_MC_cuts = "abs(BeamEnergy-8.3)<0.3&&abs(MandelstamNegT-0.45)<0.25&&abs(ProtonVertexZ-65)<13&&NumUnusedTracks==0&&NumUnusedShowers<3&&KSFlightSignificance>6&&Chi2NDF<2&&abs(MissingMass-0.5)<0.2&&BaryonResonanceMass3>1.9";
+        analysis_info.non_gen_MC_cuts = "abs(BeamEnergy-8.3)<0.3&&abs(MandelstamNegT-0.45)<0.25&&abs(ProtonVertexZ-65)<13&&NumUnusedTracks==0&&NumUnusedShowers<3&&KSFlightSignificance>6&&Chi2NDF<2&&abs(MissingMass-0.5)<0.2&&abs(VanHoveOmega-4.7123889)<0.52359877";
         analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{0}_{S}","K^{0}_{L}"});
+    } else if (dataset_name == "kpkm_highM_nobaryon") {
+        analysis_info.genMC_path = "/N/slate/rdube/moments/kpkm/highM/genMC_kpkm_pol*.root";
+        analysis_info.accMC_path = "/N/slate/rdube/moments/kpkm/highM/accMC_kpkm_pol*.root";
+        analysis_info.data_path = "/N/slate/rdube/moments/kpkm/highM/data_kpkm_pol*.root";
+        analysis_info.background_subtract = true;
+        analysis_info.meson_mass_min = 1.2;
+        analysis_info.meson_mass_max = 2.56;
+        analysis_info.global_cuts= TString::Format("MesonResonanceMass>%.3f&&MesonResonanceMass<%.3f", analysis_info.meson_mass_min, analysis_info.meson_mass_max);
+        analysis_info.non_gen_MC_cuts = "Chi2pipiMinusChi2KK>10&&Chi2NDF<5&&abs(BeamEnergy - 8.3)< 0.3&&abs(MandelstamNegT-0.45)<0.25&&NumUnusedTracks==0&&NumUnusedShowers==0&&abs(VanHoveOmega-4.7123889)<0.52359877";
+        analysis_info.n_bins = 34;
+        analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{+}","K^{-}"});
     } else {
         std::cout << "Analysis name not found." << std::endl;
     }
