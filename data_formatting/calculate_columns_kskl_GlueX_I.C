@@ -32,7 +32,7 @@ double get_polarization(double labPolAngle, double photon_energy)
 
     // Thread-safe initialization - guaranteed to run exactly once
     if (!pol_0_hist) {
-        TFile* pols = TFile::Open("/N/u/rdube/Quartz/data/makePolVals2020V2/outFiles/sp20TPol.root");
+        TFile* pols = TFile::Open("/N/u/rdube/Quartz/software/makePolValsV9/outFiles/sp18TPol75.root");
         if (!pols || pols->IsZombie()) {
             std::cerr << "Error: Failed to open polarization file!" << std::endl;
             return -9999999.;
@@ -114,32 +114,20 @@ double polphi(const double& PxPA, const double& PyPA, const double& PzPA, const 
     return correctPolAngle;
 }
 
-void calculate_columns(
+void calculate_columns_kskl_GlueX_I(
     const char* input_filename,
     const char* output_filename,
-    const char* final_state,
-    bool isGenMC)
+    bool isBkg)
 {
     int maxL=8;
     std::cout << "========================================" << std::endl;
     std::cout << "Calculating angles from FSRoot tree" << std::endl;
     std::cout << "Input:  " << input_filename << std::endl;
     std::cout << "Output: " << output_filename << std::endl;
-    std::cout << "Final State:   " << final_state << std::endl;
-    std::cout << "is gen MC?      " << isGenMC << std::endl;
+    std::cout << "is bkg?      " << isBkg << std::endl;
     std::cout << "========================================" << std::endl;
     
-    bool ks_sideband = false;
-    bool use_chi2diff = false;
-    std::string tree_name_str;
-    if(std::string(final_state) == "kskl") {
-        tree_name_str = "ntFSGlueX_100_1000";
-        ks_sideband = true;
-    } else if(std::string(final_state) == "kpkm") {
-        tree_name_str = "ntFSGlueX_100_110000";
-        use_chi2diff=true;
-    }
-    const char* tree_name = tree_name_str.c_str();
+    const char* tree_name = "kin";
 
     // Open input file
     TFile* input_file = TFile::Open(input_filename, "READ");
@@ -154,23 +142,6 @@ void calculate_columns(
         std::cerr << "Error: Cannot find tree " << tree_name << " in input file" << std::endl;
         input_file->Close();
         return;
-    }
-    TFile* input_file_friend;
-    TTree* friend_tree;
-    //get friend tree
-    if ( !isGenMC ) {
-        input_file_friend= TFile::Open(TString::Format("%s.Chi2DOFRank",input_filename).Data(), "READ");
-        if (!input_file_friend || input_file_friend->IsZombie()) {
-            std::cerr << "Error: Cannot open input file " << input_filename << ".Chi2DOFRank" <<std::endl;
-            return;
-        }
-        friend_tree = (TTree*)input_file_friend->Get(TString::Format("%s_Chi2DOFRank",tree_name).Data());
-        if (!friend_tree) {
-            std::cerr << "Error: Cannot find tree " << tree_name << "_Chi2DOFRank in input file" << std::endl;
-            input_file->Close();
-            input_file_friend->Close();
-            return;
-        }
     }
     // Create output file
     TFile* output_file = TFile::Open(output_filename, "RECREATE");
@@ -191,24 +162,15 @@ void calculate_columns(
 
     //For both genMC and accMC/data:
 
+    float Px_arr[3], Py_arr[3], Pz_arr[3], En_arr[3];
+    float EnPB_f, PxPB_f, PyPB_f, PzPB_f;
+
     double EnP1 = -999.0, EnP2 = -999.0, EnP3 = -999.0, EnPB = -999.0;
     double PxP1 = -999.0, PxP2 = -999.0, PxP3 = -999.0, PxPB = -999.0;
     double PyP1 = -999.0, PyP2 = -999.0, PyP3 = -999.0, PyPB = -999.0;
     double PzP1 = -999.0, PzP2 = -999.0, PzP3 = -999.0, PzPB = -999.0;
-    double Weight = 1.0;
-
-    //Only for accMC/data:
-
-    double REnP1 = -999.0, REnP2 = -999.0, REnP3 = -999.0, REnPB = -999.0;
-    double RPxP1 = -999.0, RPxP2 = -999.0, RPxP3 = -999.0, RPxPB = -999.0;
-    double RPyP1 = -999.0, RPyP2 = -999.0, RPyP3 = -999.0, RPyPB = -999.0;
-    double RPzP1 = -999.0, RPzP2 = -999.0, RPzP3 = -999.0, RPzPB = -999.0;
-    double Chi2NDF = -999.0;
-    int Chi2NDFpipi = -999;
-    double RFDeltaT = -999.0;
-    double AccidentalScale = -999.0;
-    double KSFlightSignificance = -999.0;
-    double ProtonVertexZ = -999.0;
+    float Weight_f = -999.0;
+    int pol_angle_i = -1.0;
 
     // ============================================
     // Set up variables for output branches
@@ -217,7 +179,7 @@ void calculate_columns(
     std::cout<< "Setting up variables for output branches" << std::endl;
 
     // For both genMC and accMC/data:
-
+    double Weight = 1.0;
     double PolarizationDegree = -999.0;
     double MandelstamNegT = 999.0;
     double MesonResonanceMass = -999.0;
@@ -230,29 +192,19 @@ void calculate_columns(
     double gjCosTheta = -999.0;
     double gjPhi = -999.0;
 
-    double PolarizationAngleLab = -999.0;
-    double labCosTheta = -999.0;
-    double labPhi=-999.0;
-
     double VanHoveX = -999.0;
     double VanHoveY = -999.0;
     double VanHoveOmega = -999.0;
+
+    double PolarizationAngleLab = -999.0;
+    double labCosTheta = -999.0;
+    double labPhi=-999.0;
+    double KSMass = -999.0;
 
     std::vector<double> d;
     d.resize((maxL+1)*(maxL+2)/2);
     std::vector<double> cosMphis;
     cosMphis.resize(maxL+1);
-
-    //Only for accMC/data:
-
-    double MissingMass = -999.0;
-    double Chi2pipiMinusChi2KK = -999.0;
-    double NumUnusedShowers = -999.0;
-    double NumUnusedTracks = -999.0;
-    
-    int Chi2DOFRankGlobal = -999;
-    int Chi2DOFRank = -999;
-    double KSMass = -999.0;
 
     // ============================================
     // Setting Input Branch Addresses
@@ -260,76 +212,21 @@ void calculate_columns(
 
     std::cout<< "Setting input branch addresses" << std::endl;
 
-    input_tree->SetBranchAddress("PolarizationAngle", &PolarizationAngleLab);
-    if (!isGenMC) {
-        input_tree->SetBranchAddress("RVzP1",&ProtonVertexZ);
-        input_tree->SetBranchAddress("EnPB", &EnPB);
-        input_tree->SetBranchAddress("PxPB", &PxPB);
-        input_tree->SetBranchAddress("PyPB", &PyPB);
-        input_tree->SetBranchAddress("PzPB", &PzPB);
-        input_tree->SetBranchAddress("EnP1", &EnP1);
-        input_tree->SetBranchAddress("PxP1", &PxP1);
-        input_tree->SetBranchAddress("PyP1", &PyP1);
-        input_tree->SetBranchAddress("PzP1", &PzP1);
-        input_tree->SetBranchAddress("EnP2", &EnP2);
-        input_tree->SetBranchAddress("PxP2", &PxP2);
-        input_tree->SetBranchAddress("PyP2", &PyP2);
-        input_tree->SetBranchAddress("PzP2", &PzP2);
-        input_tree->SetBranchAddress("REnPB", &REnPB);
-        input_tree->SetBranchAddress("RPxPB", &RPxPB);
-        input_tree->SetBranchAddress("RPyPB", &RPyPB);
-        input_tree->SetBranchAddress("RPzPB", &RPzPB);
-        input_tree->SetBranchAddress("REnP1", &REnP1);
-        input_tree->SetBranchAddress("RPxP1", &RPxP1);
-        input_tree->SetBranchAddress("RPyP1", &RPyP1);
-        input_tree->SetBranchAddress("RPzP1", &RPzP1);
-        input_tree->SetBranchAddress("REnP2", &REnP2);
-        input_tree->SetBranchAddress("RPxP2", &RPxP2);
-        input_tree->SetBranchAddress("RPyP2", &RPyP2);
-        input_tree->SetBranchAddress("RPzP2", &RPzP2);
-        input_tree->SetBranchAddress("AccidentalScale",&AccidentalScale);
-        input_tree->SetBranchAddress("RFDeltaT",&RFDeltaT);
-        input_tree->SetBranchAddress("NumUnusedTracks",&NumUnusedTracks);
-        input_tree->SetBranchAddress("NumNeutralHypos",&NumUnusedShowers);
-        input_tree->SetBranchAddress("Chi2DOF",&Chi2NDF);
-        friend_tree->SetBranchAddress("Chi2DOFRank",&Chi2DOFRank);
-        friend_tree->SetBranchAddress("Chi2DOFRankGlobal",&Chi2DOFRankGlobal);
-        if (use_chi2diff) {
-            friend_tree->SetBranchAddress("Chi2DOFRankVarBestOther", &Chi2NDFpipi);
-        }
-        if (ks_sideband) {
-            input_tree->SetBranchAddress("VeeLSigmaP2",&KSFlightSignificance);
-        }
-        if (std::string(final_state) == "kpkm") {
-            input_tree->SetBranchAddress("EnP3", &EnP3);
-            input_tree->SetBranchAddress("PxP3", &PxP3);
-            input_tree->SetBranchAddress("PyP3", &PyP3);
-            input_tree->SetBranchAddress("PzP3", &PzP3);
-            input_tree->SetBranchAddress("REnP3", &REnP3);
-            input_tree->SetBranchAddress("RPxP3", &RPxP3);
-            input_tree->SetBranchAddress("RPyP3", &RPyP3);
-            input_tree->SetBranchAddress("RPzP3", &RPzP3);
-        }
-    } else {
-        input_tree->SetBranchAddress("MCEnPB", &EnPB);
-        input_tree->SetBranchAddress("MCPxPB", &PxPB);
-        input_tree->SetBranchAddress("MCPyPB", &PyPB);
-        input_tree->SetBranchAddress("MCPzPB", &PzPB);
-        input_tree->SetBranchAddress("MCEnP1", &EnP1);
-        input_tree->SetBranchAddress("MCPxP1", &PxP1);
-        input_tree->SetBranchAddress("MCPyP1", &PyP1);
-        input_tree->SetBranchAddress("MCPzP1", &PzP1);
-        input_tree->SetBranchAddress("MCEnP2", &EnP2);
-        input_tree->SetBranchAddress("MCPxP2", &PxP2);
-        input_tree->SetBranchAddress("MCPyP2", &PyP2);
-        input_tree->SetBranchAddress("MCPzP2", &PzP2);
-        if (std::string(final_state) == "kpkm") {
-            input_tree->SetBranchAddress("MCEnP3", &EnP3);
-            input_tree->SetBranchAddress("MCPxP3", &PxP3);
-            input_tree->SetBranchAddress("MCPyP3", &PyP3);
-            input_tree->SetBranchAddress("MCPzP3", &PzP3);
-        }
-    }
+    input_tree->SetBranchAddress("pol_angle", &pol_angle_i);
+    input_tree->SetBranchAddress("Px_FinalState",&Px_arr);
+    input_tree->SetBranchAddress("Py_FinalState",&Py_arr);
+    input_tree->SetBranchAddress("Pz_FinalState",&Pz_arr);
+    input_tree->SetBranchAddress("E_FinalState",&En_arr);
+
+    input_tree->SetBranchAddress("Px_FinalState",&Px_arr);
+    input_tree->SetBranchAddress("Py_FinalState",&Py_arr);
+    input_tree->SetBranchAddress("Pz_FinalState",&Pz_arr);
+    input_tree->SetBranchAddress("E_Beam",&EnPB_f);
+    input_tree->SetBranchAddress("Px_Beam",&PxPB_f);
+    input_tree->SetBranchAddress("Py_Beam",&PyPB_f);
+    input_tree->SetBranchAddress("Pz_Beam",&PzPB_f);
+
+    input_tree->SetBranchAddress("Weight",&Weight_f);
 
     // ============================================
     // Set up output branches
@@ -352,16 +249,16 @@ void calculate_columns(
     output_tree->Branch("BaryonResonanceMass3", &BaryonResonanceMass3, "BaryonResonanceMass3/D");
     output_tree->Branch("MesonResonanceMass", &MesonResonanceMass, "MesonResonanceMass/D");
 
-    output_tree->Branch("BeamEnergy", &EnPB, "BeamEnergy/D");
-    
-    output_tree->Branch("PolarizationAngleLab", &PolarizationAngleLab, "PolarizationAngleLab/D");
-    output_tree->Branch("labCosTheta",&labCosTheta, "labCosTheta/D");
-    output_tree->Branch("labPhi",&labPhi, "labPhi/D");
-
     output_tree->Branch("VanHoveX",&VanHoveX, "VanHoveX/D");
     output_tree->Branch("VanHoveY",&VanHoveY, "VanHoveY/D");
     output_tree->Branch("VanHoveOmega",&VanHoveOmega, "VanHoveOmega/D");
 
+    output_tree->Branch("BeamEnergy", &EnPB, "BeamEnergy/D");
+    output_tree->Branch("KSMass", &KSMass, "KSMass/D");
+    
+    output_tree->Branch("PolarizationAngleLab", &PolarizationAngleLab, "PolarizationAngleLab/D");
+    output_tree->Branch("labCosTheta",&labCosTheta, "labCosTheta/D");
+    output_tree->Branch("labPhi",&labPhi, "labPhi/D");
     for (int L = 0; L<= maxL; L++) {
         output_tree->Branch(TString::Format("cos_%iphi", L),&cosMphis[L],TString::Format("cos_%iphi/D", L));
         for (int M = 0; M <= L; M++) {
@@ -371,26 +268,6 @@ void calculate_columns(
     }
     output_tree->Branch("Weight", &Weight,"Weight/D");
 
-    // Only for data/accMC:
-    
-    if (!isGenMC) {
-        output_tree->Branch("ProtonVertexZ",&ProtonVertexZ,"ProtonVertexZ/D");
-        output_tree->Branch("NumUnusedShowers",&NumUnusedShowers,"NumUnusedShowers/D");
-        output_tree->Branch("NumUnusedTracks",&NumUnusedTracks,"NumUnusedTracks/D");
-        output_tree->Branch("Chi2NDF",&Chi2NDF, "Chi2NDF/D");
-        output_tree->Branch("RFDeltaT",&RFDeltaT, "RFDeltaT/D");
-        if (ks_sideband) {
-            output_tree->Branch("KSFlightSignificance",&KSFlightSignificance,"KSFlightSignificance/D");
-            output_tree->Branch("MissingMass",&MissingMass,"MissingMass/D");
-            output_tree->Branch("KSMass",&KSMass,"KSMass/D");
-        }
-        if (use_chi2diff) {
-            output_tree->Branch("Chi2pipiMinusChi2KK", &Chi2pipiMinusChi2KK, "Chi2pipiMinusChi2KK/D");
-        }
-    }
-    
-    
-
     // ============================================
     // Loop over events and fill output tree
     // ============================================
@@ -398,65 +275,36 @@ void calculate_columns(
     std::cout<< "Beginning event loop" << std::endl;
 
     Long64_t nEntries = input_tree->GetEntries();
-    if (!isGenMC) {
-        Long64_t nEntries_friend = friend_tree->GetEntries();
-        if (nEntries != nEntries_friend) {
-            std::cout << "Mismatch between friend entries and tree entries. Main tree has " << nEntries << " entries. Friend Tree has " << nEntries_friend << " entries." << std::endl;
-            return;
-        }
-    }
     std::cout << "\nProcessing " << nEntries << " entries..." << std::endl;
 
     for (Long64_t entry = 0; entry < nEntries; entry++) {
         // Load entry
         input_tree->GetEntry(entry);
 
-        // Skip events early on (if accMC or data) if their chi2 rank is not 1.
-        
-        if (!isGenMC) {
-            friend_tree->GetEntry(entry);
-            if (Chi2DOFRank != 1) {
-                continue;
-            }
-            if (use_chi2diff) {
-                Chi2pipiMinusChi2KK = (double(Chi2NDFpipi)/1000.)-Chi2NDF;
-                if (Chi2DOFRankGlobal != 1) {
-                    continue;
-                }
-            }
-        }
-
         // Set up KL 4-vector if final state is kskl.
+        EnP1 = double((En_arr)[0]);
+        EnP2 = double((En_arr)[1]);
+        EnP3 = double((En_arr)[2]);
+        PxP1 = double((Px_arr)[0]);
+        PxP2 = double((Px_arr)[1]);
+        PxP3 = double((Px_arr)[2]);
+        PyP1 = double((Py_arr)[0]);
+        PyP2 = double((Py_arr)[1]);
+        PyP3 = double((Py_arr)[2]);
+        PzP1 = double((Pz_arr)[0]);
+        PzP2 = double((Pz_arr)[1]);
+        PzP3 = double((Pz_arr)[2]);
 
-        if (std::string(final_state) == "kskl") {
-            PxP3 = PxPB - PxP1 - PxP2;
-            PyP3 = PyPB - PyP1 - PyP2;
-            PzP3 = PzPB - PzP1 - PzP2;
-            EnP3 = 0.938 + EnPB - EnP1 - EnP2;
-            if (!isGenMC) {
-                MissingMass = sqrt(pow(((REnPB+0.938272)-(REnP1+REnP2)),2)-pow(((RPxPB+0.0)-(RPxP1+RPxP2)),2)-pow(((RPyPB+0.0)-(RPyP1+RPyP2)),2)-pow(((RPzPB+0.0)-(RPzP1+RPzP2)),2));
-                KSMass = sqrt(EnP2*EnP2 - PxP2*PxP2 - PyP2*PyP2 - PzP2*PzP2);
-            }
-        }
-        if (!isGenMC) {
-            Weight = 1.0;
-            if (abs(RFDeltaT) > 6 && abs(RFDeltaT) < 14) {
-                Weight *= -0.25*AccidentalScale;
-            } else if (abs(RFDeltaT) < 2) {
-                //Keep weight same
-            } else {
-                continue;
-            }
-            if (ks_sideband) {
-                if (abs(KSMass-0.5)<0.02) {
-                    // Keep weight same
-                } else if (abs(KSMass-0.5)>0.04 && abs(KSMass-0.5) < 0.06) {
-                    Weight *= -1.0;
-                } else {
-                    continue;
-                }
-            }
-        }
+        EnPB = EnPB_f;
+        PxPB = PxPB_f;
+        PyPB = PyPB_f;
+        PzPB = PzPB_f;
+
+        Weight = Weight_f;
+
+        KSMass = sqrt(EnP2*EnP2 - PxP2*PxP2 - PyP2*PyP2 - PzP2*PzP2);
+
+        PolarizationAngleLab = double(pol_angle_i);
 
         MesonResonanceMass = sqrt((EnP2+EnP3)*(EnP2+EnP3)-(PxP2+PxP3)*(PxP2+PxP3)-(PyP2+PyP3)*(PyP2+PyP3)-(PzP2+PzP3)*(PzP2+PzP3));
         MandelstamNegT=-1*(pow(((0.938272)-(EnP1)),2)-pow(((0.0)-(PxP1)),2)-pow(((0.0)-(PyP1)),2)-pow(((0.0)-(PzP1)),2))+pow((pow(((EnPB+0.938272)-(EnP1)),2)-pow(((PxPB+0.0)-(PxP1)),2)-pow(((PyPB+0.0)-(PyP1)),2)-pow(((PzPB+0.0)-(PzP1)),2))/(2*(sqrt(pow(((EnPB+0.938272)),2)-pow(((PxPB+0.0)),2)-pow(((PyPB+0.0)),2)-pow(((PzPB+0.0)),2)))),2)-pow(sqrt(pow(FSMath::boostEnergy(0.0,0.0,0.0,0.938272,PxPB,PyPB,PzPB,EnPB+0.938272),2)-0.938*0.938)-sqrt(pow(FSMath::boostEnergy(PxP1,PyP1,PzP1,EnP1,PxPB,PyPB,PzPB,EnPB+0.938272),2)-0.938*0.938),2);
@@ -468,6 +316,7 @@ void calculate_columns(
         VanHoveX = FSMath::vanHoveX(PxP1,PyP1,PzP1,EnP1,PxP2,PyP2,PzP2,EnP2,PxP3,PyP3,PzP3,EnP3);
         VanHoveY = FSMath::vanHoveY(PxP1,PyP1,PzP1,EnP1,PxP2,PyP2,PzP2,EnP2,PxP3,PyP3,PzP3,EnP3);
         VanHoveOmega = FSMath::vanHoveomega(PxP1,PyP1,PzP1,EnP1,PxP2,PyP2,PzP2,EnP2,PxP3,PyP3,PzP3,EnP3);
+        
         //Getting the helicity angles
         TLorentzVector beam(PxPB, PyPB, PzPB, EnPB); 
         TLorentzVector recoil(PxP1, PyP1, PzP1, EnP1);
@@ -498,6 +347,9 @@ void calculate_columns(
                 int index = M+L*(L+1)/2;
                 d[index] = d_lm0(L,M,helCosTheta);
             }
+        }
+        if (isBkg) {
+            Weight *= -1;
         }
         // Fill output tree
         output_tree->Fill();
