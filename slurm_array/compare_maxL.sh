@@ -28,7 +28,7 @@ output_directory="/N/u/rdube/Quartz/work/moments_workflow/results"
 echo "Comparing maxL=${all_L_to_compare}"
 echo "MaxL is ${max_L_in_list}"
 
-root -b -q -x -e ".L /N/u/rdube/Quartz/work/moments_workflow/calculate_measured_moments.C+" -e ".L /N/u/rdube/Quartz/work/moments_workflow/calculate_measured_moments_parasite.C+" -e ".L /N/u/rdube/Quartz/work/moments_workflow/acceptance_matrix.C+" -e ".L /N/u/rdube/Quartz/work/moments_workflow/acceptance_matrix_parasite.C+" -e ".L /N/u/rdube/Quartz/work/moments_workflow/acceptance_correct.C+" -e ".L /N/u/rdube/Quartz/work/moments_workflow/aggregate_results.C+" -e ".L /N/u/rdube/Quartz/work/moments_workflow/comparison_plots.C+" -e ".L /N/u/rdube/Quartz/work/moments_workflow/maxL_comparison_plots.C+"|| exit 1
+root -b -q -x -e ".L /N/u/rdube/Quartz/work/moments_workflow/calculate_measured_moments_parasite.C+" -e ".L /N/u/rdube/Quartz/work/moments_workflow/acceptance_matrix_parasite.C+" -e ".L /N/u/rdube/Quartz/work/moments_workflow/aggregate_results.C+" -e ".L /N/u/rdube/Quartz/work/moments_workflow/comparison_plots.C+" -e ".L /N/u/rdube/Quartz/work/moments_workflow/maxL_comparison_plots.C+" -e ".L /N/u/rdube/Quartz/work/moments_workflow/slurm_array/single_step_calculate_moments.C" || exit 1
 
 array_job_id=$(sbatch --array=0-${n_bootstraps} --output="/dev/null" --parsable /N/u/rdube/Quartz/work/moments_workflow/slurm_array/compare_maxL.slurm "${dataset}" "${max_L_in_list}" ${all_L_to_compare})
 

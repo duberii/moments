@@ -247,17 +247,19 @@ void single_step_calculate_moments(const char* dataset_name, int maxL, int boots
     std::unique_ptr<TFile> acceptance_matrix_fout(TFile::Open(TString::Format("%s/accMC/acceptance_matrix.root",analysis_info.output_path.Data()),"RECREATE"));
     acceptance_matrix_fout->cd();
     std::vector<TMatrixD> inverse_acceptance_matrices;
+    inverse_acceptance_matrices.reserve(acceptance_matrix.acceptance_matrices.size());
     for (int i = 0; i < acceptance_matrix.acceptance_matrices.size(); i++) {
         acceptance_matrix.acceptance_matrices[i].Write(TString::Format("acceptanceMatrix_%i",i));
         TH2D matrixHist(acceptance_matrix.acceptance_matrices[i]);
         matrixHist.SetDirectory(nullptr);
         matrixHist.Write(TString::Format("acceptanceMatrixHistogram_%i",i));
-        inverse_acceptance_matrices.emplace_back(acceptance_matrix.acceptance_matrices[i]);
-        inverse_acceptance_matrices.back().Invert();
-        inverse_acceptance_matrices.back().Write(TString::Format("acceptanceMatrixInverse_%i",i));
-        TH2D matrixHistInverse(inverse_acceptance_matrices.back());
+        TMatrixD inverse_matrix = acceptance_matrix.acceptance_matrices[i];
+        inverse_matrix.Invert();
+        inverse_matrix.Write(TString::Format("acceptanceMatrixInverse_%i",i));
+        TH2D matrixHistInverse(inverse_matrix);
         matrixHistInverse.SetDirectory(nullptr);
         matrixHistInverse.Write(TString::Format("acceptanceMatrixHistogramInverse_%i",i));
+        inverse_acceptance_matrices.push_back(std::move(inverse_matrix));
     }
     acceptance_matrix_fout->Close();
     acceptance_matrix_fout.reset();
@@ -324,8 +326,8 @@ void single_step_calculate_moments(const char* dataset_name, int maxL, int boots
     std::cout << "loading moments vectors" << std::endl;
     for (int i=0; i < dimension; i++) {
         for (int bin=0; bin<analysis_info.n_bins; bin++) {
-            moments_vectors_data[bin](i,0) = mv_data.moments_histograms[i]->GetBinContent(bin+1);
-            moments_vectors_accMC[bin](i,0) = mv_accMC.moments_histograms[i]->GetBinContent(bin+1);
+            moments_vectors_data[bin](i,0) = mv_data.moments_histograms_raw[i]->GetBinContent(bin+1);
+            moments_vectors_accMC[bin](i,0) = mv_accMC.moments_histograms_raw[i]->GetBinContent(bin+1);
         }
     }
     std::cout << "acceptance correcting moments" << std::endl;
