@@ -1,0 +1,315 @@
+#include <stdexcept>
+#include <TString.h>
+#include "/N/u/rdube/Quartz/work/moments_workflow/shared_funcs.C"
+
+void single_step_calculate_moments_parasite(const char* dataset_name, int maxL, int bootstrap_number, int largest_L) {
+    bool is_bootstrap = (bootstrap_number>-1);
+
+    //Get analysis-specific information
+    AnalysisInfo analysis_info = getAnalysisInfo(dataset_name);
+    TString parasite_input_path;
+    if (is_bootstrap) {
+        parasite_input_path=TString::Format("%s%s/%i/bootstraps/%i", analysis_info.output_path.Data(), dataset_name, largest_L, bootstrap_number);
+        analysis_info.output_path=TString::Format("%s%s/%i/bootstraps/%i", analysis_info.output_path.Data(), dataset_name, maxL, bootstrap_number);
+    } else {
+        parasite_input_path=TString::Format("%s%s/%i/full",analysis_info.output_path.Data(), dataset_name, largest_L);
+        analysis_info.output_path=TString::Format("%s%s/%i/full", analysis_info.output_path.Data(), dataset_name, maxL);
+    }
+
+    //Read moments histograms from file
+
+    TFile* fin_data = TFile::Open(parasite_input_path + "/data/moments.root","READ");
+    TFile* fin_accMC = TFile::Open(parasite_input_path + "/accMC/moments.root","READ");
+    TFile* fin_genMC = TFile::Open(parasite_input_path + "/genMC/moments.root","READ");
+    TFile* fin_acceptance_matrices = TFile::Open(parasite_input_path + "/accMC/acceptance_matrix.root","READ");
+
+    // TO DO +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+    //open output file
+    std::unique_ptr<TFile> fout_data(TFile::Open(TString::Format("%s/data/moments.root",analysis_info.output_path.Data()),"RECREATE"));
+    fout_data->cd();
+    if (!is_bootstrap) {
+        TH1D* massHist_data = (TH1D*)fin_data->Get("MesonMass");
+        TH1D* baryonHist2_data = (TH1D*)fin_data->Get("Baryon2Mass");
+        TH1D* baryonHist3_data = (TH1D*)fin_data->Get("Baryon3Mass");
+        TH2D* angularDist_data = (TH2D*)fin_data->Get("AngularDistribution");
+        baryonHist2_data->Write();
+        baryonHist3_data->Write();
+        angularDist_data->Write();
+        massHist_data->Write();
+    }
+    std::vector<TH1D*> data_moments_histograms_raw;
+    std::vector<TH1D*> data_moments_histograms;
+    std::vector<TH1D*> accMC_moments_histograms_raw;
+    std::vector<TH1D*> accMC_moments_histograms;
+    std::vector<TH1D*> genMC_moments_histograms_raw;
+    std::vector<TH1D*> genMC_moments_histograms;
+    for (int alpha = 0; alpha < 3; alpha++) {
+        for (int L = 0; L <= maxL; L++) {
+            for (int M = 0; M <= L; M++) {
+                if (alpha == 2 && M==0) {
+                    continue;
+                }
+                data_moments_histograms.push_back((TH1D*)fin_data->Get(TString::Format("H_%i_%i_%i",alpha,L,M)));
+                data_moments_histograms_raw.push_back((TH1D*)fin_data->Get(TString::Format("H_%i_%i_%i_raw",alpha,L,M)));
+                data_moments_histograms.back()->Write();
+                data_moments_histograms_raw.back()->Write();
+            }
+        }
+    }
+    fout_data->Close();
+    fout_data.reset();
+    gROOT->cd();
+
+    std::unique_ptr<TFile> fout_accMC(TFile::Open(TString::Format("%s/accMC/moments.root",analysis_info.output_path.Data()),"RECREATE"));
+    fout_accMC->cd();
+    if (!is_bootstrap) {
+        TH1D* massHist_accMC = (TH1D*)fin_accMC->Get("MesonMass");
+        TH1D* baryonHist2_accMC = (TH1D*)fin_accMC->Get("Baryon2Mass");
+        TH1D* baryonHist3_accMC = (TH1D*)fin_accMC->Get("Baryon3Mass");
+        TH2D* angularDist_accMC = (TH2D*)fin_accMC->Get("AngularDistribution");
+        baryonHist2_accMC->Write();
+        baryonHist3_accMC->Write();
+        angularDist_accMC->Write();
+        massHist_accMC->Write();
+    }
+    for (int alpha = 0; alpha < 3; alpha++) {
+        for (int L = 0; L <= maxL; L++) {
+            for (int M = 0; M <= L; M++) {
+                if (alpha == 2 && M==0) {
+                    continue;
+                }
+                accMC_moments_histograms.push_back((TH1D*)fin_accMC->Get(TString::Format("H_%i_%i_%i",alpha,L,M)));
+                accMC_moments_histograms_raw.push_back((TH1D*)fin_accMC->Get(TString::Format("H_%i_%i_%i_raw",alpha,L,M)));
+                accMC_moments_histograms.back()->Write();
+                accMC_moments_histograms_raw.back()->Write();
+            }
+        }
+    }
+    fout_accMC->Close();
+    fout_accMC.reset();
+    gROOT->cd();
+
+    std::unique_ptr<TFile> fout_genMC(TFile::Open(TString::Format("%s/genMC/moments.root",analysis_info.output_path.Data()),"RECREATE"));
+    fout_genMC->cd();
+    TH1D* massHist_genMC = (TH1D*)fin_genMC->Get("MesonMass");
+    if (!is_bootstrap) {
+        TH1D* baryonHist2_genMC = (TH1D*)fin_genMC->Get("Baryon2Mass");
+        TH1D* baryonHist3_genMC = (TH1D*)fin_genMC->Get("Baryon3Mass");
+        TH2D* angularDist_genMC = (TH2D*)fin_genMC->Get("AngularDistribution");
+        baryonHist2_genMC->Write();
+        baryonHist3_genMC->Write();
+        angularDist_genMC->Write();
+        massHist_genMC->Write();
+    }
+    massHist_genMC->SetDirectory(nullptr);
+    for (int alpha = 0; alpha < 3; alpha++) {
+        for (int L = 0; L <= maxL; L++) {
+            for (int M = 0; M <= L; M++) {
+                if (alpha == 2 && M==0) {
+                    continue;
+                }
+                genMC_moments_histograms.push_back((TH1D*)fin_genMC->Get(TString::Format("H_%i_%i_%i",alpha,L,M)));
+                genMC_moments_histograms_raw.push_back((TH1D*)fin_genMC->Get(TString::Format("H_%i_%i_%i_raw",alpha,L,M)));
+                genMC_moments_histograms.back()->Write();
+                genMC_moments_histograms_raw.back()->Write();
+            }
+        }
+    }
+    fout_genMC->Close();
+    fout_genMC.reset();
+    gROOT->cd();
+    // ========================================================================================
+    // Begin making the acceptance matrix
+    // ========================================================================================
+
+    //open output file
+
+    MomentsArray larger_moment_array(largest_L);
+    MomentsArray smaller_moment_array(maxL);
+    std::unique_ptr<TFile> acceptance_matrix_fout(TFile::Open(TString::Format("%s/accMC/acceptance_matrix.root",analysis_info.output_path.Data()),"RECREATE"));
+    acceptance_matrix_fout->cd();
+    std::vector<TMatrixD> inverse_acceptance_matrices;
+    inverse_acceptance_matrices.reserve(analysis_info.n_bins);
+    for (int i = 0; i < analysis_info.n_bins; i++) {
+        TMatrixD output_matrix(smaller_moment_array.dimension,smaller_moment_array.dimension);
+        TMatrixD* input_matrix = (TMatrixD*)fin_acceptance_matrices->Get(TString::Format("acceptanceMatrix_%i",i));
+        for (int alpha = 0; alpha < 3; alpha++) {
+            int smaller_lower_bound_x;
+            int larger_lower_bound_x;
+            if (alpha == 0) {
+                smaller_lower_bound_x=0;
+                larger_lower_bound_x = 0;
+            } else {
+                smaller_lower_bound_x= smaller_moment_array.getMomentIndex(alpha-1,maxL,maxL)+1;
+                larger_lower_bound_x = larger_moment_array.getMomentIndex(alpha-1,largest_L,largest_L)+1;
+            } 
+            int larger_upper_bound_x = larger_moment_array.getMomentIndex(alpha, maxL, maxL);
+            for (int alphaPrime = 0; alphaPrime < 3; alphaPrime++) {
+                int smaller_lower_bound_y;
+                int larger_lower_bound_y;
+                if (alphaPrime == 0) {
+                    smaller_lower_bound_y=0;
+                    larger_lower_bound_y = 0;
+                } else {
+                    smaller_lower_bound_y= smaller_moment_array.getMomentIndex(alphaPrime-1,maxL,maxL)+1;
+                    larger_lower_bound_y = larger_moment_array.getMomentIndex(alphaPrime-1,largest_L,largest_L)+1;
+                } 
+                int larger_upper_bound_y = larger_moment_array.getMomentIndex(alphaPrime, maxL, maxL);
+                output_matrix.SetSub(smaller_lower_bound_x, smaller_lower_bound_y, input_matrix->GetSub(larger_lower_bound_x, larger_upper_bound_x, larger_lower_bound_y, larger_upper_bound_y));
+            }
+        }
+        output_matrix.Write(TString::Format("acceptanceMatrix_%i",i));
+        TH2D matrixHist(output_matrix);
+        matrixHist.SetDirectory(nullptr);
+        matrixHist.Write(TString::Format("acceptanceMatrixHistogram_%i",i));
+        TMatrixD inverse_matrix = output_matrix;
+        inverse_matrix.Invert();
+        inverse_matrix.Write(TString::Format("acceptanceMatrixInverse_%i",i));
+        TH2D matrixHistInverse(inverse_matrix);
+        matrixHistInverse.SetDirectory(nullptr);
+        matrixHistInverse.Write(TString::Format("acceptanceMatrixHistogramInverse_%i",i));
+        inverse_acceptance_matrices.push_back(std::move(inverse_matrix));
+    }
+    acceptance_matrix_fout->Close();
+    acceptance_matrix_fout.reset();
+
+    // ========================================================================================
+    // Begin acceptance correcting
+    // ========================================================================================
+
+    MomentsArray moments_index_handler(maxL, 0,0,0,0);
+    
+    int dimension = 3*(maxL+1)*(maxL+2)/2 - maxL-1;
+    std::vector<TMatrixD> moments_vectors_accMC;
+    std::vector<TMatrixD> moments_vectors_data;
+    std::vector<std::unique_ptr<TH1D>> output_histograms_raw_accMC;
+    std::vector<std::unique_ptr<TH1D>> output_histograms_normalized_accMC;
+
+    std::vector<std::unique_ptr<TH1D>> output_histograms_raw_data;
+    std::vector<std::unique_ptr<TH1D>> output_histograms_normalized_data;
+
+    ReactionSpecs reaction = analysis_info.reaction;
+
+    std::cout << "Creating moments vectors" << std::endl;
+
+    for (int bin=0; bin<analysis_info.n_bins; bin++) {
+        moments_vectors_accMC.emplace_back(dimension,1);
+        moments_vectors_data.emplace_back(dimension,1);
+    }
+    std::vector<int> pns = {2,3};
+
+    std::cout << "creating empty moments histograms" << std::endl;
+    for (int alpha=0; alpha < 3; alpha++) {
+        for (int L=0; L <= maxL; L++) {
+            for (int M=0; M <= L; M++) {
+                if (alpha == 2 && M==0) {
+                    continue;
+                }
+                TString unnormalized_title = TString::Format("H^{%i}(%i%i) for %s; %s (GeV/c^{2}) ; H^{%i}(%i%i)",alpha,L, M, analysis_info.reaction.getReaction().Data(), analysis_info.reaction.massString(pns).Data(), alpha,L, M);
+                TString normalized_title = TString::Format("#LT_{}H^{%i}(%i%i)#GT for %s; %s (GeV/c^{2}) ; #LT_{}H^{%i}(%i%i)#GT",alpha, L, M, analysis_info.reaction.getReaction().Data(), analysis_info.reaction.massString(pns).Data(),alpha, L, M);
+                TString unnormalized_fig_name = TString::Format("H_%i_%i_%i_raw_acceptance_corrected",alpha,L,M);
+                TString normalized_fig_name = TString::Format("H_%i_%i_%i_acceptance_corrected",alpha,L,M);
+                output_histograms_raw_data.push_back(std::make_unique<TH1D>(unnormalized_fig_name,unnormalized_fig_name,analysis_info.n_bins,analysis_info.meson_mass_min,analysis_info.meson_mass_max));
+                output_histograms_raw_data.back()->SetTitle(unnormalized_title);
+                output_histograms_raw_data.back()->SetDirectory(nullptr);
+                output_histograms_raw_data.back()->SetStats(0);
+
+                output_histograms_normalized_data.push_back(std::make_unique<TH1D>(normalized_fig_name,normalized_fig_name,analysis_info.n_bins,analysis_info.meson_mass_min,analysis_info.meson_mass_max));
+                output_histograms_normalized_data.back()->SetTitle(normalized_title);
+                output_histograms_normalized_data.back()->SetDirectory(nullptr);
+                output_histograms_normalized_data.back()->SetStats(0);
+
+                output_histograms_raw_accMC.push_back(std::make_unique<TH1D>(unnormalized_fig_name,unnormalized_fig_name,analysis_info.n_bins,analysis_info.meson_mass_min,analysis_info.meson_mass_max));
+                output_histograms_raw_accMC.back()->SetTitle(unnormalized_title);
+                output_histograms_raw_accMC.back()->SetDirectory(nullptr);
+                output_histograms_raw_accMC.back()->SetStats(0);
+
+                output_histograms_normalized_accMC.push_back(std::make_unique<TH1D>(normalized_fig_name,normalized_fig_name,analysis_info.n_bins,analysis_info.meson_mass_min,analysis_info.meson_mass_max));
+                output_histograms_normalized_accMC.back()->SetTitle(normalized_title);
+                output_histograms_normalized_accMC.back()->SetDirectory(nullptr);
+                output_histograms_normalized_accMC.back()->SetStats(0);
+            }
+        }
+    }
+    std::unique_ptr<TLine> zero_line = std::make_unique<TLine>(analysis_info.meson_mass_min,0,analysis_info.meson_mass_max,0);
+    std::cout << "loading moments vectors" << std::endl;
+    for (int i=0; i < dimension; i++) {
+        for (int bin=0; bin<analysis_info.n_bins; bin++) {
+            moments_vectors_data[bin](i,0) = data_moments_histograms_raw[i]->GetBinContent(bin+1);
+            moments_vectors_accMC[bin](i,0) = accMC_moments_histograms_raw[i]->GetBinContent(bin+1);
+        }
+    }
+    std::cout << "acceptance correcting moments" << std::endl;
+    for (int binNo=0; binNo<analysis_info.n_bins; binNo++) {
+        TMatrixD truth_moments_data = inverse_acceptance_matrices[binNo] * moments_vectors_data[binNo];
+        TMatrixD truth_moments_accMC = inverse_acceptance_matrices[binNo] * moments_vectors_accMC[binNo];
+        for (int alpha = 0; alpha <3; alpha++) {
+            for (int L=0; L <= maxL; L++) {
+                for (int M=0; M <= L; M++) {
+                    if (alpha == 2 && M == 0) {
+                        continue;
+                    }
+                    int index = moments_index_handler.getMomentIndex(alpha, L, M);
+                    double moment_value_data = truth_moments_data(index,0);
+                    double moment_value_accMC = truth_moments_accMC(index,0);
+                    output_histograms_raw_data[index]->SetBinContent(binNo+1, moment_value_data);
+                    output_histograms_raw_accMC[index]->SetBinContent(binNo+1, moment_value_accMC);
+            }
+            }
+        }
+    }
+    std::cout << "saving acceptance corrected moments" << std::endl;
+    fout_data.reset(TFile::Open(TString::Format("%s/data/moments.root",analysis_info.output_path.Data()),"UPDATE"));
+    fout_data->cd();
+    for (int alpha=0; alpha < 3; alpha++) {
+        for (int L=0; L <= maxL; L++) {
+            for (int M=0; M <= L; M++) {
+                if (alpha == 2 && M == 0) {
+                    continue;
+                }
+                int index = moments_index_handler.getMomentIndex(alpha, L, M);
+                output_histograms_raw_data[index]->SetMinimum(1.1*min(0.,output_histograms_raw_data[index]->GetMinimum()));
+                output_histograms_raw_data[index]->SetMaximum(1.1*max(0.,output_histograms_raw_data[index]->GetMaximum()));
+                output_histograms_raw_data[index]->Write(TString::Format("H_%i_%i_%i_raw_acceptance_corrected",alpha, L,M));
+                output_histograms_normalized_data[index]->Divide(output_histograms_raw_data[index].get(),output_histograms_raw_data[0].get());
+                output_histograms_normalized_data[index]->SetMaximum(1.1*max(0.,output_histograms_normalized_data[index]->GetMaximum()));
+                output_histograms_normalized_data[index]->SetMinimum(1.1*min(0.,output_histograms_normalized_data[index]->GetMinimum()));
+                output_histograms_normalized_data[index]->Write(TString::Format("H_%i_%i_%i_acceptance_corrected",alpha, L,M));
+            }
+        }
+    }
+    fout_data->Close();
+    fout_data.reset();
+
+    fout_accMC.reset(TFile::Open(TString::Format("%s/accMC/moments.root",analysis_info.output_path.Data()),"UPDATE"));
+    fout_accMC->cd();
+    for (int alpha=0; alpha < 3; alpha++) {
+        for (int L=0; L <= maxL; L++) {
+            for (int M=0; M <= L; M++) {
+                if (alpha == 2 && M == 0) {
+                    continue;
+                }
+                int index = moments_index_handler.getMomentIndex(alpha, L, M);
+                output_histograms_raw_accMC[index]->SetMinimum(1.1*min(0.,output_histograms_raw_accMC[index]->GetMinimum()));
+                output_histograms_raw_accMC[index]->SetMaximum(1.1*max(0.,output_histograms_raw_accMC[index]->GetMaximum()));
+                output_histograms_raw_accMC[index]->Write(TString::Format("H_%i_%i_%i_raw_acceptance_corrected",alpha, L,M));
+                output_histograms_normalized_accMC[index]->Divide(output_histograms_raw_accMC[index].get(),output_histograms_raw_accMC[0].get());
+                output_histograms_normalized_accMC[index]->SetMaximum(1.1*max(0.,output_histograms_normalized_accMC[index]->GetMaximum()));
+                output_histograms_normalized_accMC[index]->SetMinimum(1.1*min(0.,output_histograms_normalized_accMC[index]->GetMinimum()));
+                output_histograms_normalized_accMC[index]->Write(TString::Format("H_%i_%i_%i_acceptance_corrected",alpha, L,M));
+            }
+        }
+    }
+    fout_accMC->Close();
+    fout_accMC.reset();
+
+    fin_data->Close();
+    fin_accMC->Close();
+    fin_genMC->Close();
+    fin_acceptance_matrices->Close();
+    delete fin_data;
+    delete fin_accMC;
+    delete fin_genMC;
+    delete fin_acceptance_matrices;
+}

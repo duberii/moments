@@ -31,7 +31,7 @@ void aggregate_results(const char* dataset_name, int maxL, int num_bootstraps) {
             figure_names_in_current_file[figure_number] = (figure != nullptr);
         }
         for (int bootstrap_number = 0; bootstrap_number < num_bootstraps; bootstrap_number++) {
-            std::unique_ptr<TFile> bootstrap_file = std::unique_ptr<TFile>(TFile::Open(TString::Format("%s%s/%i/bootstrap_%i/%s/moments.root", analysis_info.output_path.Data(), dataset_name, maxL, bootstrap_number, data_files[data_file_number].Data()),"READ"));
+            std::unique_ptr<TFile> bootstrap_file = std::unique_ptr<TFile>(TFile::Open(TString::Format("%s%s/%i/bootstraps/%i/%s/moments.root", analysis_info.output_path.Data(), dataset_name, maxL, bootstrap_number, data_files[data_file_number].Data()),"READ"));
             for (int figure_number = 0; figure_number < int(figure_names_in_current_file.size()); figure_number++) {
                 if (!figure_names_in_current_file[figure_number]) {
                     continue;

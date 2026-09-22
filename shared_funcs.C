@@ -454,4 +454,99 @@ class AcceptanceMatrix {
     }
 };
 
+class MomentsVector {
+    public:
+    int maxL;
+    int nThreads;
+    int nBins;
+    double xMin;
+    double xMax;
+    double bin_size;
+    int dimension;
+    bool isBootstrap;
+    std::vector<std::vector<std::vector<double>>> thread_moment_values;
+    std::vector<std::vector<std::vector<double>>> thread_sumw2;
+    std::vector<std::vector<double>> compiled_moments;
+    std::vector<std::vector<double>> compiled_sumw2;
+    ReactionSpecs* reaction;
+    std::vector<std::unique_ptr<TH1D>> moments_histograms;
+    std::vector<std::unique_ptr<TH1D>> moments_histograms_raw;
+    MomentsArray moments_array;
+    
+    MomentsVector(double n_bins, double x_min, double x_max, int max_l, int n_threads, ReactionSpecs* reac, bool is_bootstrap) 
+    : maxL(max_l)
+    , nThreads(n_threads)
+    , nBins(n_bins)
+    , xMin(x_min)
+    , xMax(x_max)
+    , dimension(3*(max_l+1)*(max_l+2)/2 - max_l-1)
+    , isBootstrap(is_bootstrap)
+    , thread_moment_values(std::vector<std::vector<std::vector<double>>>(n_threads,std::vector<std::vector<double>>(n_bins, std::vector<double>(3*(max_l+1)*(max_l+2)/2 - max_l-1))))
+    , thread_sumw2(std::vector<std::vector<std::vector<double>>>(n_threads,std::vector<std::vector<double>>(n_bins, std::vector<double>(3*(max_l+1)*(max_l+2)/2 - max_l-1))))
+    , compiled_moments(std::vector<std::vector<double>>(n_bins, std::vector<double>(3*(max_l+1)*(max_l+2)/2 - max_l-1)))
+    , compiled_sumw2(std::vector<std::vector<double>>(n_bins, std::vector<double>(3*(max_l+1)*(max_l+2)/2 - max_l-1)))
+    , reaction(reac)
+    , moments_array(max_l)
+    {
+        bin_size = (xMax-xMin)/nBins;
+    }
+    void make_moments_by_event(unsigned int thread_number, double PolarizationDegree, double helCosTheta, double helPhi, double PolarizationAngleReac, double MesonMass, double full_weight) {
+        if (full_weight == 0) {
+            return;
+        }
+        MomentsArray moments_array_local(maxL, helCosTheta, helPhi, PolarizationAngleReac, PolarizationDegree);
+        int binNumber = floor((MesonMass-xMin)/bin_size);
+        if (binNumber < 0 || binNumber >= nBins) {
+            return;
+        }
+        for (int rowNo = 0; rowNo < dimension; rowNo++) {
+            double moment = moments_array_local.getMoment(rowNo);
+            thread_moment_values[thread_number][binNumber][rowNo] += full_weight*moment;
+            thread_sumw2[thread_number][binNumber][rowNo] += full_weight*moment*moment;
+        }
+    }
+    void compile_thread_results() {
+        for (int bin=0; bin< nBins; bin++) {
+            for (int thread_num=0; thread_num < nThreads; thread_num++) {
+                for (int index = 0; index < dimension; index++) {
+                    compiled_moments[bin][index]+= thread_moment_values[thread_num][bin][index];
+                    compiled_sumw2[bin][index] += thread_sumw2[thread_num][bin][index];
+                }
+            }
+        }
+        for (int index = 0; index < dimension; index++) {
+            std::vector<int> indices = moments_array.getAlphaLM(index);
+            int alpha = indices[0];
+            int L = indices[1];
+            int M = indices[2];
+            TString fig_name_raw = TString::Format("H_%i_%i_%i_raw", alpha, L, M);
+            TString fig_name = TString::Format("H_%i_%i_%i", alpha, L, M);
+            TString title_raw = TString::Format("H^{%i}(%i%i) for %s; %s (GeV/c^{2}) ; H^{%i}(%i%i)",alpha, L, M, reaction->getReaction().Data(), reaction->massString({2,3}).Data(),alpha, L, M);
+            TString title = TString::Format("#LT_{}H^{%i}(%i%i)#GT for %s; %s (GeV/c^{2}) ; #LT_{}H^{%i}(%i%i)#GT",alpha, L, M, reaction->getReaction().Data(), reaction->massString({2,3}).Data(),alpha, L, M);
+            moments_histograms.push_back(std::make_unique<TH1D>(fig_name,title,nBins, xMin, xMax));
+            moments_histograms_raw.push_back(std::make_unique<TH1D>(fig_name_raw,title_raw,nBins, xMin, xMax));
+            moments_histograms.back()->SetStats(0);
+            moments_histograms_raw.back()->SetStats(0);
+            moments_histograms.back()->SetDirectory(nullptr);
+            moments_histograms_raw.back()->SetDirectory(nullptr);
+            for (int bin=0; bin < nBins; bin++) {
+                double moment_val = compiled_moments[bin][index];
+                double moment_sumw2 = compiled_sumw2[bin][index];
+                moments_histograms_raw.back()->SetBinContent(bin+1,moment_val);
+                moments_histograms_raw.back()->SetBinError(bin+1, sqrt(moment_sumw2));
+                if (index != 0) {
+                    double normalized_moment_val = (compiled_moments[bin][0] == 0) ? -999. : moment_val/compiled_moments[bin][0];
+                    double N_events = 2*TMath::Pi() * compiled_moments[bin][0];
+                    double uncertainty = 2*TMath::Pi()*sqrt((moment_sumw2)/(N_events*N_events) - (moment_val*moment_val)/(N_events*N_events*N_events));
+                    moments_histograms.back()->SetBinContent(bin+1, normalized_moment_val);
+                    moments_histograms.back()->SetBinError(bin+1, uncertainty);
+                } else {
+                    moments_histograms.back()->SetBinContent(bin+1, 1.00);
+                    moments_histograms.back()->SetBinError(bin+1, 0.00);
+                }
+            }
+        }
+    }
+};
+
 #endif
