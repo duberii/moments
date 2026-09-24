@@ -125,7 +125,7 @@ AnalysisInfo getAnalysisInfo(std::string dataset_name) {
         analysis_info.non_gen_MC_cuts = "Chi2pipiMinusChi2KK>10&&Chi2NDF<2&&abs(BeamEnergy - 8.3)< 0.3&&abs(MandelstamNegT-0.45)<0.25&&NumUnusedTracks==0&&NumUnusedShowers==0";
         analysis_info.n_bins = 34;
         analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{+}","K^{-}"});
-    } else if (dataset_name =="kskl_spring_2020") {
+    } else if (dataset_name =="kskl_Spring_2020") {
         analysis_info.genMC_path = "/N/slate/rdube/moments/kskl/Spring_2020/genMC_kskl_pol*.root";
         analysis_info.accMC_path = "/N/slate/rdube/moments/kskl/Spring_2020/accMC_kskl_pol*.root";
         analysis_info.data_path = "/N/slate/rdube/moments/kskl/Spring_2020/data_kskl_pol*.root";
@@ -329,6 +329,49 @@ void draw_on_same_canvas(std::vector<TH1D*> hists, std::vector<TString> hist_nam
         } else {
             hist->Draw("SAME E1 X0");
         }
+    }
+    zero_line->Draw();
+    legend->Draw();
+    fout->cd();
+    canvas->Write(fig_name);
+    canvas->SaveAs(TString::Format("%s%s.png", output_directory_base.Data(), fig_name.Data()));
+}
+
+void draw_on_same_canvas_with_statistical_errors(std::vector<TH1D*> hists, std::vector<TH1D*> hists_statistical,std::vector<TString> hist_names, TString fig_name, TFile* fout, TCanvas* canvas, TString output_directory_base) {
+    canvas->cd();
+    std::unique_ptr<TLegend> legend = std::make_unique<TLegend>(0.2,0.15);
+    std::unique_ptr<TLine> zero_line = std::make_unique<TLine>(hists[0]->GetXaxis()->GetXmin(), 0, hists[0]->GetXaxis()->GetXmax(), 0);
+    std::vector<Color_t> colors = {kRed+1, kBlue+1, kGreen+3, kMagenta+2, kOrange+7};
+    double yMin = 0.;
+    double yMax = 0.;
+    for (unsigned int i = 0; i < hists.size(); i++) {
+        TH1D* hist = hists[i];
+        TH1D* hist_statistical = hists_statistical[i];
+        TString hist_name = hist_names[i];
+        hist->SetLineColor(colors[i]);
+        hist->SetMarkerColor(colors[i]);
+        hist->SetStats(0);
+        hist_statistical->SetLineColor(colors[i]);
+        hist_statistical->SetMarkerColor(colors[i]);
+        hist_statistical->SetStats(0);
+        yMin = min(yMin, hist->GetMinimum());
+        yMax = max(yMax, hist->GetMaximum());
+        yMin = min(yMin, hist_statistical->GetMinimum());
+        yMax = max(yMax, hist_statistical->GetMaximum());
+        legend->AddEntry(hist, hist_name, "lp");
+    }
+
+    for (unsigned int i = 0; i < hists.size(); i++) {
+        TH1D* hist = hists[i];
+        TH1D* hist_statistical = hists_statistical[i];
+        if (i==0) {
+            hist->SetMinimum(yMin);
+            hist->SetMaximum(yMax);
+            hist->Draw("E1 X0");
+        } else {
+            hist->Draw("SAME E1 X0");
+        }
+        hist_statistical->Draw("SAME E1 X0");
     }
     zero_line->Draw();
     legend->Draw();
