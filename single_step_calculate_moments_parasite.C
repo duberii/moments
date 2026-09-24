@@ -23,21 +23,18 @@ void single_step_calculate_moments_parasite(const char* dataset_name, int maxL, 
     TFile* fin_genMC = TFile::Open(parasite_input_path + "/genMC/moments.root","READ");
     TFile* fin_acceptance_matrices = TFile::Open(parasite_input_path + "/accMC/acceptance_matrix.root","READ");
 
-    // TO DO +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
     //open output file
+    std::cout << "Copying histograms from maxL=" << largest_L << std::endl;
     std::unique_ptr<TFile> fout_data(TFile::Open(TString::Format("%s/data/moments.root",analysis_info.output_path.Data()),"RECREATE"));
     fout_data->cd();
-    if (!is_bootstrap) {
-        TH1D* massHist_data = (TH1D*)fin_data->Get("MesonMass");
-        TH1D* baryonHist2_data = (TH1D*)fin_data->Get("Baryon2Mass");
-        TH1D* baryonHist3_data = (TH1D*)fin_data->Get("Baryon3Mass");
-        TH2D* angularDist_data = (TH2D*)fin_data->Get("AngularDistribution");
-        baryonHist2_data->Write();
-        baryonHist3_data->Write();
-        angularDist_data->Write();
-        massHist_data->Write();
-    }
+    TH1D* massHist_data = (TH1D*)fin_data->Get("MesonMass");
+    TH1D* baryonHist2_data = (TH1D*)fin_data->Get("Baryon2Mass");
+    TH1D* baryonHist3_data = (TH1D*)fin_data->Get("Baryon3Mass");
+    TH2D* angularDist_data = (TH2D*)fin_data->Get("AngularDistribution");
+    baryonHist2_data->Write();
+    baryonHist3_data->Write();
+    angularDist_data->Write();
+    massHist_data->Write();
     std::vector<TH1D*> data_moments_histograms_raw;
     std::vector<TH1D*> data_moments_histograms;
     std::vector<TH1D*> accMC_moments_histograms_raw;
@@ -63,16 +60,14 @@ void single_step_calculate_moments_parasite(const char* dataset_name, int maxL, 
 
     std::unique_ptr<TFile> fout_accMC(TFile::Open(TString::Format("%s/accMC/moments.root",analysis_info.output_path.Data()),"RECREATE"));
     fout_accMC->cd();
-    if (!is_bootstrap) {
-        TH1D* massHist_accMC = (TH1D*)fin_accMC->Get("MesonMass");
-        TH1D* baryonHist2_accMC = (TH1D*)fin_accMC->Get("Baryon2Mass");
-        TH1D* baryonHist3_accMC = (TH1D*)fin_accMC->Get("Baryon3Mass");
-        TH2D* angularDist_accMC = (TH2D*)fin_accMC->Get("AngularDistribution");
-        baryonHist2_accMC->Write();
-        baryonHist3_accMC->Write();
-        angularDist_accMC->Write();
-        massHist_accMC->Write();
-    }
+    TH1D* massHist_accMC = (TH1D*)fin_accMC->Get("MesonMass");
+    TH1D* baryonHist2_accMC = (TH1D*)fin_accMC->Get("Baryon2Mass");
+    TH1D* baryonHist3_accMC = (TH1D*)fin_accMC->Get("Baryon3Mass");
+    TH2D* angularDist_accMC = (TH2D*)fin_accMC->Get("AngularDistribution");
+    baryonHist2_accMC->Write();
+    baryonHist3_accMC->Write();
+    angularDist_accMC->Write();
+    massHist_accMC->Write();
     for (int alpha = 0; alpha < 3; alpha++) {
         for (int L = 0; L <= maxL; L++) {
             for (int M = 0; M <= L; M++) {
@@ -93,15 +88,14 @@ void single_step_calculate_moments_parasite(const char* dataset_name, int maxL, 
     std::unique_ptr<TFile> fout_genMC(TFile::Open(TString::Format("%s/genMC/moments.root",analysis_info.output_path.Data()),"RECREATE"));
     fout_genMC->cd();
     TH1D* massHist_genMC = (TH1D*)fin_genMC->Get("MesonMass");
-    if (!is_bootstrap) {
-        TH1D* baryonHist2_genMC = (TH1D*)fin_genMC->Get("Baryon2Mass");
-        TH1D* baryonHist3_genMC = (TH1D*)fin_genMC->Get("Baryon3Mass");
-        TH2D* angularDist_genMC = (TH2D*)fin_genMC->Get("AngularDistribution");
-        baryonHist2_genMC->Write();
-        baryonHist3_genMC->Write();
-        angularDist_genMC->Write();
-        massHist_genMC->Write();
-    }
+    massHist_genMC->SetDirectory(nullptr);
+    TH1D* baryonHist2_genMC = (TH1D*)fin_genMC->Get("Baryon2Mass");
+    TH1D* baryonHist3_genMC = (TH1D*)fin_genMC->Get("Baryon3Mass");
+    TH2D* angularDist_genMC = (TH2D*)fin_genMC->Get("AngularDistribution");
+    baryonHist2_genMC->Write();
+    baryonHist3_genMC->Write();
+    angularDist_genMC->Write();
+    massHist_genMC->Write();
     massHist_genMC->SetDirectory(nullptr);
     for (int alpha = 0; alpha < 3; alpha++) {
         for (int L = 0; L <= maxL; L++) {
@@ -119,6 +113,8 @@ void single_step_calculate_moments_parasite(const char* dataset_name, int maxL, 
     fout_genMC->Close();
     fout_genMC.reset();
     gROOT->cd();
+
+    std::cout << "Done copying histograms from maxL=" << largest_L << std::endl;
     // ========================================================================================
     // Begin making the acceptance matrix
     // ========================================================================================
@@ -131,6 +127,7 @@ void single_step_calculate_moments_parasite(const char* dataset_name, int maxL, 
     acceptance_matrix_fout->cd();
     std::vector<TMatrixD> inverse_acceptance_matrices;
     inverse_acceptance_matrices.reserve(analysis_info.n_bins);
+    std::cout << "Copying acceptance matrices from maxL=" << largest_L << std::endl;
     for (int i = 0; i < analysis_info.n_bins; i++) {
         TMatrixD output_matrix(smaller_moment_array.dimension,smaller_moment_array.dimension);
         TMatrixD* input_matrix = (TMatrixD*)fin_acceptance_matrices->Get(TString::Format("acceptanceMatrix_%i",i));
@@ -173,6 +170,7 @@ void single_step_calculate_moments_parasite(const char* dataset_name, int maxL, 
     }
     acceptance_matrix_fout->Close();
     acceptance_matrix_fout.reset();
+    std::cout << "Done copying acceptance matrices from maxL=" << largest_L << std::endl;
 
     // ========================================================================================
     // Begin acceptance correcting

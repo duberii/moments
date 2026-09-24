@@ -75,16 +75,14 @@ void single_step_calculate_moments(const char* dataset_name, int maxL, int boots
     mv_data.compile_thread_results();
     std::unique_ptr<TFile> fout_data(TFile::Open(TString::Format("%s/data/moments.root",analysis_info.output_path.Data()),"RECREATE"));
     fout_data->cd();
-    if (!is_bootstrap) {
-        TH1D* massHist_data = massHistPtr_data.GetPtr();
-        TH1D* baryonHist2_data = mass2HistPtr_data.GetPtr();
-        TH1D* baryonHist3_data = mass3HistPtr_data.GetPtr();
-        TH2D* angularDist_data = angularDistPtr_data.GetPtr();
-        baryonHist2_data->Write();
-        baryonHist3_data->Write();
-        angularDist_data->Write();
-        massHist_data->Write();
-    }
+    TH1D* massHist_data = massHistPtr_data.GetPtr();
+    TH1D* baryonHist2_data = mass2HistPtr_data.GetPtr();
+    TH1D* baryonHist3_data = mass3HistPtr_data.GetPtr();
+    TH2D* angularDist_data = angularDistPtr_data.GetPtr();
+    baryonHist2_data->Write();
+    baryonHist3_data->Write();
+    angularDist_data->Write();
+    massHist_data->Write();
     for (int i = 0; i < mv_data.moments_histograms.size(); i++) {
         mv_data.moments_histograms[i]->Write();
         mv_data.moments_histograms_raw[i]->Write();
@@ -97,16 +95,14 @@ void single_step_calculate_moments(const char* dataset_name, int maxL, int boots
     mv_accMC.compile_thread_results();
     std::unique_ptr<TFile> fout_accMC(TFile::Open(TString::Format("%s/accMC/moments.root",analysis_info.output_path.Data()),"RECREATE"));
     fout_accMC->cd();
-    if (!is_bootstrap) {
-        TH1D* massHist_accMC = massHistPtr_accMC.GetPtr();
-        TH1D* baryonHist2_accMC = mass2HistPtr_accMC.GetPtr();
-        TH1D* baryonHist3_accMC = mass3HistPtr_accMC.GetPtr();
-        TH2D* angularDist_accMC = angularDistPtr_accMC.GetPtr();
-        baryonHist2_accMC->Write();
-        baryonHist3_accMC->Write();
-        angularDist_accMC->Write();
-        massHist_accMC->Write();
-    }
+    TH1D* massHist_accMC = massHistPtr_accMC.GetPtr();
+    TH1D* baryonHist2_accMC = mass2HistPtr_accMC.GetPtr();
+    TH1D* baryonHist3_accMC = mass3HistPtr_accMC.GetPtr();
+    TH2D* angularDist_accMC = angularDistPtr_accMC.GetPtr();
+    baryonHist2_accMC->Write();
+    baryonHist3_accMC->Write();
+    angularDist_accMC->Write();
+    massHist_accMC->Write();
     for (int i = 0; i < mv_accMC.moments_histograms.size(); i++) {
         mv_accMC.moments_histograms[i]->Write();
         mv_accMC.moments_histograms_raw[i]->Write();
@@ -121,15 +117,13 @@ void single_step_calculate_moments(const char* dataset_name, int maxL, int boots
     std::unique_ptr<TFile> fout_genMC(TFile::Open(TString::Format("%s/genMC/moments.root",analysis_info.output_path.Data()),"RECREATE"));
     fout_genMC->cd();
     TH1D* massHist_genMC = massHistPtr_genMC.GetPtr();
-    if (!is_bootstrap) {
-        TH1D* baryonHist2_genMC = mass2HistPtr_genMC.GetPtr();
-        TH1D* baryonHist3_genMC = mass3HistPtr_genMC.GetPtr();
-        TH2D* angularDist_genMC = angularDistPtr_genMC.GetPtr();
-        baryonHist2_genMC->Write();
-        baryonHist3_genMC->Write();
-        angularDist_genMC->Write();
-        massHist_genMC->Write();
-    }
+    TH1D* baryonHist2_genMC = mass2HistPtr_genMC.GetPtr();
+    TH1D* baryonHist3_genMC = mass3HistPtr_genMC.GetPtr();
+    TH2D* angularDist_genMC = angularDistPtr_genMC.GetPtr();
+    baryonHist2_genMC->Write();
+    baryonHist3_genMC->Write();
+    angularDist_genMC->Write();
+    massHist_genMC->Write();
     massHist_genMC->SetDirectory(nullptr);
     for (int i = 0; i < mv_genMC.moments_histograms.size(); i++) {
         mv_genMC.moments_histograms[i]->Write();
