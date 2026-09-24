@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --cpus-per-task=1
-#SBATCH --time=01:00:00
+#SBATCH --time=00:05:00
 #SBATCH -A r00039
 
 echo "Using $SLURM_CPUS_PER_TASK CPUs"

@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --cpus-per-task=4
-#SBATCH --time=03:00:00
+#SBATCH --time=00:20:00
 #SBATCH -A r00039
 
 
