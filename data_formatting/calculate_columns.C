@@ -23,7 +23,7 @@ double d_lm0(int L, int M, double costheta)
     return pow(-1., M) * sqrt(TMath::Factorial(L - M) / TMath::Factorial(L + M)) * std::assoc_legendre(L, M, costheta);
 }
 
-double get_polarization(double labPolAngle, double photon_energy)
+double get_polarization(double labPolAngle, double photon_energy, const char* run_period)
 {
     static TH1D* pol_0_hist = nullptr;
     static TH1D* pol_45_hist = nullptr;
@@ -32,7 +32,19 @@ double get_polarization(double labPolAngle, double photon_energy)
 
     // Thread-safe initialization - guaranteed to run exactly once
     if (!pol_0_hist) {
-        TFile* pols = TFile::Open("/N/u/rdube/Quartz/data/makePolVals2020V2/outFiles/sp20TPol.root");
+        TFile* pols;
+        if (std::string(run_period) == "Spring_2020") {
+            pols = TFile::Open("/N/slate/rdube/makePolVals2020V2/outFiles/sp20TPol.root","READ");
+        } else if (std::string(run_period) == "Spring_2017") {
+            pols = TFile::Open("/N/slate/rdube/makePolValsV9/outFiles/sp17TPol.root","READ");
+        } else if (std::string(run_period) == "Fall_2018") {
+            pols = TFile::Open("/N/slate/rdube/makePolValsV9/outFiles/fa18TPol.root","READ");
+        } else if (std::string(run_period) == "Spring_2018") {
+            pols = TFile::Open("/N/slate/rdube/makePolValsV9/outFiles/sp18TPol75.root","READ");
+        } else {
+            return -9999999.;
+        }
+        
         if (!pols || pols->IsZombie()) {
             std::cerr << "Error: Failed to open polarization file!" << std::endl;
             return -9999999.;
@@ -118,7 +130,8 @@ void calculate_columns(
     const char* input_filename,
     const char* output_filename,
     const char* final_state,
-    bool isGenMC)
+    bool isGenMC,
+    const char* run_period="Spring_2020")
 {
     int maxL=8;
     std::cout << "========================================" << std::endl;
@@ -398,6 +411,7 @@ void calculate_columns(
     std::cout<< "Beginning event loop" << std::endl;
 
     Long64_t nEntries = input_tree->GetEntries();
+    Long64_t percent_of_nEntries = nEntries/100;
     if (!isGenMC) {
         Long64_t nEntries_friend = friend_tree->GetEntries();
         if (nEntries != nEntries_friend) {
@@ -410,6 +424,9 @@ void calculate_columns(
     for (Long64_t entry = 0; entry < nEntries; entry++) {
         // Load entry
         input_tree->GetEntry(entry);
+        if (entry % percent_of_nEntries == 0) {
+            std::cout << "Finished " << entry/percent_of_nEntries << "\% of entries" << std::endl;
+        }
 
         // Skip events early on (if accMC or data) if their chi2 rank is not 1.
         
@@ -462,7 +479,7 @@ void calculate_columns(
         MandelstamNegT=-1*(pow(((0.938272)-(EnP1)),2)-pow(((0.0)-(PxP1)),2)-pow(((0.0)-(PyP1)),2)-pow(((0.0)-(PzP1)),2))+pow((pow(((EnPB+0.938272)-(EnP1)),2)-pow(((PxPB+0.0)-(PxP1)),2)-pow(((PyPB+0.0)-(PyP1)),2)-pow(((PzPB+0.0)-(PzP1)),2))/(2*(sqrt(pow(((EnPB+0.938272)),2)-pow(((PxPB+0.0)),2)-pow(((PyPB+0.0)),2)-pow(((PzPB+0.0)),2)))),2)-pow(sqrt(pow(FSMath::boostEnergy(0.0,0.0,0.0,0.938272,PxPB,PyPB,PzPB,EnPB+0.938272),2)-0.938*0.938)-sqrt(pow(FSMath::boostEnergy(PxP1,PyP1,PzP1,EnP1,PxPB,PyPB,PzPB,EnPB+0.938272),2)-0.938*0.938),2);
         BaryonResonanceMass2 = sqrt((EnP1+EnP2)*(EnP1+EnP2)-(PxP1+PxP2)*(PxP1+PxP2)-(PyP1+PyP2)*(PyP1+PyP2)-(PzP2+PzP1)*(PzP2+PzP1));
         BaryonResonanceMass3 = sqrt((EnP1+EnP3)*(EnP1+EnP3)-(PxP1+PxP3)*(PxP1+PxP3)-(PyP1+PyP3)*(PyP1+PyP3)-(PzP3+PzP1)*(PzP3+PzP1));
-        PolarizationDegree = get_polarization(PolarizationAngleLab, EnPB);
+        PolarizationDegree = get_polarization(PolarizationAngleLab, EnPB, run_period);
 
         //Calculating van hove coordinates
         VanHoveX = FSMath::vanHoveX(PxP1,PyP1,PzP1,EnP1,PxP2,PyP2,PzP2,EnP2,PxP3,PyP3,PzP3,EnP3);
