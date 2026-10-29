@@ -4,3 +4,5 @@
 results/
 *.swp
 kskl_comparison/
+kskl_gluex_I_comparison/
+formatting_scripts/
