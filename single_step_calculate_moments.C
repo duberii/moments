@@ -23,6 +23,9 @@ void single_step_calculate_moments(const char* dataset_name, int maxL, int boots
         ROOT::RDataFrame dataframe_data("decayAngles",TString::Format(analysis_info.data_path.Data(),polarization_angle));
         ROOT::RDataFrame dataframe_accMC("decayAngles",TString::Format(analysis_info.accMC_path.Data(),polarization_angle));
         ROOT::RDataFrame dataframe_genMC("decayAngles",TString::Format(analysis_info.genMC_path.Data(),polarization_angle));
+        ROOT::RDF::Experimental::AddProgressBar(dataframe_data);
+        ROOT::RDF::Experimental::AddProgressBar(dataframe_accMC);
+        ROOT::RDF::Experimental::AddProgressBar(dataframe_genMC);
         ROOT::RDF::RNode moments_df_data = dataframe_data;
         ROOT::RDF::RNode moments_df_accMC = dataframe_accMC;
         ROOT::RDF::RNode moments_df_genMC = dataframe_genMC;
