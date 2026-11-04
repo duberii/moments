@@ -27,7 +27,7 @@
 
 double d_lm0(int L, int M, double costheta)
 {
-    return pow(-1., M) * sqrt(TMath::Factorial(L - M) / TMath::Factorial(L + M)) * std::assoc_legendre(L, M, costheta);
+    return ((M & 1) ? -1.0 : 1.0) * sqrt(TMath::Factorial(L - M) / TMath::Factorial(L + M)) * std::assoc_legendre(L, M, costheta);
 }
 
 class ReactionSpecs{
@@ -109,11 +109,11 @@ AnalysisInfo getAnalysisInfo(std::string dataset_name) {
         analysis_info.accMC_path = "/N/slate/rdube/moments/kpkm/highM/accMC_kpkm_pol%i.root";
         analysis_info.data_path = "/N/slate/rdube/moments/kpkm/highM/data_kpkm_pol%i.root";
         analysis_info.background_subtract = true;
-        analysis_info.meson_mass_min = 1.2;
-        analysis_info.meson_mass_max = 2.56;
+        analysis_info.meson_mass_min = 1.1;
+        analysis_info.meson_mass_max = 2.6;
         analysis_info.global_cuts= TString::Format("abs(BeamEnergy - 8.3)< 0.3&&abs(MandelstamNegT-0.45)<0.25&&MesonResonanceMass>%.3f&&MesonResonanceMass<%.3f", analysis_info.meson_mass_min, analysis_info.meson_mass_max);
         analysis_info.non_gen_MC_cuts = "Chi2pipiMinusChi2KK>10&&Chi2NDF<5&&NumUnusedTracks==0&&NumUnusedShowers==0";
-        analysis_info.n_bins = 34;
+        analysis_info.n_bins = 30;
         analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{+}","K^{-}"});;
     } else if (dataset_name =="kskl_Spring_2020") {
         analysis_info.genMC_path = "/N/slate/rdube/moments/kskl/Spring_2020/genMC_kskl_pol%i.root";
@@ -132,8 +132,8 @@ AnalysisInfo getAnalysisInfo(std::string dataset_name) {
         analysis_info.data_path = "/N/slate/rdube/moments/kskl/GlueX_I/data_kskl_*_pol%i.root";
         analysis_info.background_subtract = true;
         analysis_info.meson_mass_min = 1.1;
-        analysis_info.meson_mass_max = 2.0;
-        analysis_info.n_bins = 18;
+        analysis_info.meson_mass_max = 2.6;
+        analysis_info.n_bins = 30;
         analysis_info.global_cuts= TString::Format("abs(BeamEnergy-8.5)<0.3&&abs(MandelstamNegT-0.45)<0.25&&MesonResonanceMass>%.3f&&MesonResonanceMass<%.3f", analysis_info.meson_mass_min, analysis_info.meson_mass_max);
         analysis_info.non_gen_MC_cuts = "abs(ProtonVertexZ-65)<13&&NumUnusedTracks==0&&NumUnusedShowers<3&&KSFlightSignificance>6&&Chi2NDF<2&&abs(MissingMass-0.5)<0.2";
         analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{0}_{S}","K^{0}_{L}"});
@@ -211,7 +211,7 @@ class MomentsArray {
     double PolarizationAngleReac;
     double PolarizationDegree;
     std::vector<std::vector<std::vector<int>>> moments_indices;
-    std::vector<std::vector<int>> inverse_map;
+    std::vector<std::array<int,3>> inverse_map;
     std::vector<double> H;
     int dimension;
     MomentsArray(int max_l, double hct, double hp, double par, double pd) 
@@ -221,24 +221,25 @@ class MomentsArray {
     , PolarizationAngleReac(par)
     , PolarizationDegree(pd) 
     {
+        dimension = maxL*(3*maxL+7)/2 + 2;
+        inverse_map.reserve(dimension);
         int counter = 0;
         moments_indices.resize(3);
         for (int alpha = 0; alpha < 3; alpha ++) {
             moments_indices[alpha].resize(maxL+1);
             for (int L = 0; L <= maxL; L++) {
+                moments_indices[alpha][L].reserve(L+1);
                 for (int M = 0; M <= L; M++) {
                     if (alpha == 2 && M == 0) {
                         moments_indices[alpha][L].push_back(-999);
                         continue;
                     }
                     moments_indices[alpha][L].push_back(counter);
-                    
                     inverse_map.push_back({alpha, L, M});
                     counter+=1;
                 }
             }
         }
-        dimension = counter;
         H.resize(dimension);
         for (int L = 0; L <= maxL; L++) {
             for (int M=0; M<= L; M++) {
@@ -260,46 +261,56 @@ class MomentsArray {
     , PolarizationDegree(0) 
     {
         int counter = 0;
+        dimension = maxL*(3*maxL+7)/2 + 2;
+        inverse_map.reserve(dimension);
         moments_indices.resize(3);
         for (int alpha = 0; alpha < 3; alpha ++) {
             moments_indices[alpha].resize(maxL+1);
             for (int L = 0; L <= maxL; L++) {
+                moments_indices[alpha][L].reserve(L+1);
                 for (int M = 0; M <= L; M++) {
                     if (alpha == 2 && M == 0) {
                         moments_indices[alpha][L].push_back(-999);
                         continue;
                     }
                     moments_indices[alpha][L].push_back(counter);
-                    
                     inverse_map.push_back({alpha, L, M});
                     counter+=1;
                 }
             }
         }
-        dimension = counter;
     }
     int getMomentIndex(int alpha, int L, int M) {
-        if (L > maxL) {
-            throw std::invalid_argument(std::string("L is bigger than Lmax"));
-        } else if (L < 0) {
-            throw std::invalid_argument(std::string("L is negative"));
-        } else if (M>L) {
-            throw std::invalid_argument(std::string("M is bigger than L"));
-        }
-        if (alpha == 2 && M==0 ) {
-            throw std::out_of_range("Tried to access alpha==2 M==0 index");
-        }
-        return moments_indices.at(alpha).at(L).at(M);
+        return moments_indices[alpha][L][M];
     }
     double getMoment(int alpha, int L, int M) {
         int moment_to_get = getMomentIndex(alpha,L,M);
-        return H.at(moment_to_get);
+        return H[moment_to_get];
     }
     double getMoment(int moment_to_get) {
-        return H.at(moment_to_get);
+        return H[moment_to_get];
     }
-    std::vector<int> getAlphaLM(int index) {
-        return inverse_map.at(index);
+    const std::array<int,3>& getAlphaLM(int index) const {
+        return inverse_map[index];
+    }
+    void Reset(double hct, double hp, double par, double pd) 
+    {
+        helCosTheta = hct;
+        helPhi = hp;
+        PolarizationAngleReac = par;
+        PolarizationDegree = pd;
+        H.resize(dimension);
+        for (int L = 0; L <= maxL; L++) {
+            for (int M=0; M<= L; M++) {
+                double d_l_m_0 = d_lm0(L, M, helCosTheta);
+                double cosMphi = cos(M*helPhi);
+                H[getMomentIndex(0,L,M)] = d_l_m_0*cosMphi/(2*TMath::Pi());
+                H[getMomentIndex(1,L,M)] = d_l_m_0*cosMphi*cos(2.*PolarizationAngleReac)/(PolarizationDegree*TMath::Pi());
+                if (M != 0) {
+                    H[getMomentIndex(2, L, M)] = -1.0*d_l_m_0*sin(M*helPhi)*sin(2.*PolarizationAngleReac)/(PolarizationDegree*TMath::Pi());
+                }
+            }
+        }
     }
 };
 
@@ -426,8 +437,9 @@ class AcceptanceMatrix {
     double bin_size;
     int dimension;
     bool is_bootstrap;
-    std::vector<std::vector<TMatrixD>> thread_matrices;
+    std::vector<std::vector<std::vector<double>>> thread_matrices;
     std::vector<TMatrixD> acceptance_matrices;
+    std::vector<MomentsArray> moments_arrays;
     
     AcceptanceMatrix(int n_bins, double x_min, double x_max, int max_l, int n_threads, TH1D* genMC_mass_figure, bool is_bootstrap) 
     : maxL(max_l)
@@ -438,38 +450,39 @@ class AcceptanceMatrix {
     , xMax(x_max)
     , dimension(3*(max_l+1)*(max_l+2)/2 - max_l-1)
     , is_bootstrap(is_bootstrap)
-    , thread_matrices(std::vector<std::vector<TMatrixD>>(nThreads, std::vector<TMatrixD>(n_bins,TMatrixD(3*(max_l+1)*(max_l+2)/2- max_l-1,3*(max_l+1)*(max_l+2)/2- max_l-1))))
-    , acceptance_matrices(std::vector<TMatrixD>(n_bins, TMatrixD(3*(max_l+1)*(max_l+2)/2 - max_l-1,3*(max_l+1)*(max_l+2)/2 - max_l-1))) {
+    , thread_matrices(std::vector<std::vector<std::vector<double>>>(nThreads, std::vector<std::vector<double>>(n_bins,std::vector<double>(dimension*dimension))))
+    , acceptance_matrices(std::vector<TMatrixD>(n_bins, TMatrixD(3*(max_l+1)*(max_l+2)/2 - max_l-1,3*(max_l+1)*(max_l+2)/2 - max_l-1)))
+    , moments_arrays(std::vector<MomentsArray>(nThreads,MomentsArray(max_l))) {
         bin_size = (xMax-xMin)/nBins;
     }
     void make_matrix_by_event(unsigned int thread_number, double PolarizationDegree, double helCosTheta, double helPhi, double PolarizationAngleReac, double MesonMass, double full_weight) {
         if (full_weight == 0) {
             return;
         }
-        MomentsArray moments(maxL, helCosTheta, helPhi, PolarizationAngleReac, PolarizationDegree);
+        moments_arrays[thread_number].Reset(helCosTheta, helPhi, PolarizationAngleReac, PolarizationDegree);
         int binNumber = floor((MesonMass-xMin)/bin_size)+1;
         if (binNumber < 1 || binNumber > nBins) {
             return;
         }
-        int dimension = moments.dimension;
+        int dimension = moments_arrays[thread_number].dimension;
         for (int rowNo = 0; rowNo < dimension; rowNo++) {
-            std::vector<int> indices_1 = moments.getAlphaLM(rowNo);
+            const std::array<int,3>& indices_1 = moments_arrays[thread_number].getAlphaLM(rowNo);
             int alpha = indices_1[0];
             int L = indices_1[1];
             int M = indices_1[2];
-            double moment_1 = moments.getMoment(rowNo);
+            double moment_1 = moments_arrays[thread_number].getMoment(rowNo);
             double transpose_prefactor = matrix_element_prefactor(alpha, L, M, PolarizationDegree);
             for (int colNo = 0; colNo <= rowNo; colNo++) {
-                std::vector<int> indices_2 = moments.getAlphaLM(colNo);
+                const std::array<int,3>& indices_2 = moments_arrays[thread_number].getAlphaLM(colNo);
                 int alphaPrime = indices_2[0];
                 int LPrime = indices_2[1];
                 int MPrime = indices_2[2];
-                double moment_2 = moments.getMoment(colNo);
+                double moment_2 = moments_arrays[thread_number].getMoment(colNo);
 
                 double nominal_prefactor = matrix_element_prefactor(alphaPrime, LPrime, MPrime, PolarizationDegree);
-                thread_matrices[thread_number][binNumber-1](rowNo,colNo) += full_weight*nominal_prefactor*moment_1*moment_2;
+                thread_matrices[thread_number][binNumber-1][rowNo*dimension+colNo] += full_weight*nominal_prefactor*moment_1*moment_2;
                 if (rowNo != colNo) {
-                    thread_matrices[thread_number][binNumber-1](colNo,rowNo) += full_weight*transpose_prefactor*moment_1*moment_2;
+                    thread_matrices[thread_number][binNumber-1][colNo*dimension+rowNo] += full_weight*transpose_prefactor*moment_1*moment_2;
                 }
             }
         }
@@ -478,7 +491,11 @@ class AcceptanceMatrix {
         std::cout << "finished foreachslot" << std::endl;
         for (int bin=0; bin< nBins; bin++) {
             for (int thread_num=0; thread_num < nThreads; thread_num++) {
-                acceptance_matrices[bin]+= thread_matrices[thread_num][bin];
+                for (int rowNo = 0; rowNo < dimension; rowNo++) {
+                    for (int colNo = 0; colNo < dimension; colNo++) {
+                        acceptance_matrices[bin](rowNo,colNo)+=thread_matrices[thread_num][bin][rowNo*dimension+colNo];
+                    }
+                }
             }
             double n_gen_events_in_bin = genMC_hist->GetBinContent(bin+1);
             acceptance_matrices[bin] *= 1./n_gen_events_in_bin;
@@ -515,7 +532,7 @@ class MomentsVector {
     ReactionSpecs* reaction;
     std::vector<std::unique_ptr<TH1D>> moments_histograms;
     std::vector<std::unique_ptr<TH1D>> moments_histograms_raw;
-    MomentsArray moments_array;
+    std::vector<MomentsArray> moments_arrays;
     
     MomentsVector(double n_bins, double x_min, double x_max, int max_l, int n_threads, ReactionSpecs* reac, bool is_bootstrap) 
     : maxL(max_l)
@@ -530,7 +547,7 @@ class MomentsVector {
     , compiled_moments(std::vector<std::vector<double>>(n_bins, std::vector<double>(3*(max_l+1)*(max_l+2)/2 - max_l-1)))
     , compiled_sumw2(std::vector<std::vector<double>>(n_bins, std::vector<double>(3*(max_l+1)*(max_l+2)/2 - max_l-1)))
     , reaction(reac)
-    , moments_array(max_l)
+    , moments_arrays(std::vector<MomentsArray>(n_threads,MomentsArray(max_l)))
     {
         bin_size = (xMax-xMin)/nBins;
     }
@@ -538,13 +555,13 @@ class MomentsVector {
         if (full_weight == 0) {
             return;
         }
-        MomentsArray moments_array_local(maxL, helCosTheta, helPhi, PolarizationAngleReac, PolarizationDegree);
+        moments_arrays[thread_number].Reset(helCosTheta, helPhi, PolarizationAngleReac, PolarizationDegree);
         int binNumber = floor((MesonMass-xMin)/bin_size);
         if (binNumber < 0 || binNumber >= nBins) {
             return;
         }
         for (int rowNo = 0; rowNo < dimension; rowNo++) {
-            double moment = moments_array_local.getMoment(rowNo);
+            double moment = moments_arrays[thread_number].getMoment(rowNo);
             thread_moment_values[thread_number][binNumber][rowNo] += full_weight*moment;
             thread_sumw2[thread_number][binNumber][rowNo] += full_weight*moment*moment;
         }
@@ -559,7 +576,7 @@ class MomentsVector {
             }
         }
         for (int index = 0; index < dimension; index++) {
-            std::vector<int> indices = moments_array.getAlphaLM(index);
+            const std::array<int,3>& indices = moments_arrays[0].getAlphaLM(index);
             int alpha = indices[0];
             int L = indices[1];
             int M = indices[2];
