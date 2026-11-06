@@ -7,8 +7,7 @@ void aggregate_results(const char* dataset_name, int maxL, int num_bootstraps) {
     std::unique_ptr<TCanvas> canvas = std::make_unique<TCanvas>("canvas","canvas",700,500);
     int dimension = 3*(maxL+1)*(maxL+2)/2 - maxL-1;
     MomentsArray moments_index_handler(maxL);
-
-    for (int polarization_angle : {0,45,90,135}) {
+    for (TString file_label : analysis_info.independent_files ) {
 
         //===================================================
         // Making fully bootstrapped figures
@@ -16,7 +15,7 @@ void aggregate_results(const char* dataset_name, int maxL, int num_bootstraps) {
 
         // First, read the nominal values from the "full" file
 
-        std::unique_ptr<TFile> main_file = std::unique_ptr<TFile>(TFile::Open(TString::Format("%s%s/%i/full/data/moments_%i.root", analysis_info.output_path.Data(), dataset_name, maxL,polarization_angle),"UPDATE"));
+        std::unique_ptr<TFile> main_file = std::unique_ptr<TFile>(TFile::Open(TString::Format("%s%s/%i/full/data/moments_%s.root", analysis_info.output_path.Data(), dataset_name, maxL,file_label.Data()),"UPDATE"));
         
         std::vector<std::vector<double>> means = std::vector<std::vector<double>>(dimension,std::vector<double>(analysis_info.n_bins));
         std::vector<std::vector<double>> means_raw = std::vector<std::vector<double>>(dimension,std::vector<double>(analysis_info.n_bins));
@@ -57,7 +56,7 @@ void aggregate_results(const char* dataset_name, int maxL, int num_bootstraps) {
         
         std::cout<< "Beginning to calculate std dev from bootstrapped files" << std::endl;
         for (int bootstrap_number = 0; bootstrap_number < num_bootstraps; bootstrap_number++) {
-            std::unique_ptr<TFile> bootstrap_file = std::unique_ptr<TFile>(TFile::Open(TString::Format("%s%s/%i/bootstraps/%i/data/moments_%i.root", analysis_info.output_path.Data(), dataset_name, maxL, bootstrap_number, polarization_angle),"READ"));
+            std::unique_ptr<TFile> bootstrap_file = std::unique_ptr<TFile>(TFile::Open(TString::Format("%s%s/%i/bootstraps/%i/data/moments_%s.root", analysis_info.output_path.Data(), dataset_name, maxL, bootstrap_number, file_label.Data()),"READ"));
             for (int alpha = 0; alpha <3; alpha++) {
                 for (int L =0; L <= maxL; L++) {
                     for (int M =0; M <= L; M++) { 
@@ -123,13 +122,13 @@ void aggregate_results(const char* dataset_name, int maxL, int num_bootstraps) {
         std::cout<< "Beginning to calculate std dev (statstical error) from bootstrapped files" << std::endl;
         std::vector<TMatrixD> inverse_acceptance_matrices;
         inverse_acceptance_matrices.reserve(analysis_info.n_bins);
-        TFile* acceptance_matrix_fin = TFile::Open(TString::Format("%s%s/%i/full/accMC/acceptance_matrix_%i.root", analysis_info.output_path.Data(), dataset_name, maxL, polarization_angle),"READ");
+        TFile* acceptance_matrix_fin = TFile::Open(TString::Format("%s%s/%i/full/accMC/acceptance_matrix_%s.root", analysis_info.output_path.Data(), dataset_name, maxL, file_label.Data()),"READ");
         for (int bin = 0; bin < analysis_info.n_bins; bin++) {
             TMatrixD* mtx = (TMatrixD*)acceptance_matrix_fin->Get(TString::Format("acceptanceMatrixInverse_%i",bin));
             inverse_acceptance_matrices.emplace_back(*mtx);
         }
         for (int bootstrap_number = 0; bootstrap_number < num_bootstraps; bootstrap_number++) {
-            std::unique_ptr<TFile> bootstrap_file = std::unique_ptr<TFile>(TFile::Open(TString::Format("%s%s/%i/bootstraps/%i/data/moments_%i.root", analysis_info.output_path.Data(), dataset_name, maxL, bootstrap_number, polarization_angle),"READ"));
+            std::unique_ptr<TFile> bootstrap_file = std::unique_ptr<TFile>(TFile::Open(TString::Format("%s%s/%i/bootstraps/%i/data/moments_%s.root", analysis_info.output_path.Data(), dataset_name, maxL, bootstrap_number, file_label.Data()),"READ"));
             std::vector<TMatrixD> moments_vectors_raw;
             for (int bin = 0; bin < analysis_info.n_bins; bin++) {
                 moments_vectors_raw.emplace_back(dimension,1);
@@ -182,13 +181,16 @@ void aggregate_results(const char* dataset_name, int maxL, int num_bootstraps) {
                 }
             }
     }
+    std::cout << "Beginning weighted histogram sum" << std::endl;
     //Do an inverse-variance weighted sum of the results for the different polarization angles
-    std::unique_ptr<TFile> fin_0 = std::unique_ptr<TFile>(TFile::Open(TString::Format("%s%s/%i/full/data/moments_0.root", analysis_info.output_path.Data(), dataset_name, maxL),"READ"));
-    std::unique_ptr<TFile> fin_45 = std::unique_ptr<TFile>(TFile::Open(TString::Format("%s%s/%i/full/data/moments_45.root", analysis_info.output_path.Data(), dataset_name, maxL),"READ"));
-    std::unique_ptr<TFile> fin_90 = std::unique_ptr<TFile>(TFile::Open(TString::Format("%s%s/%i/full/data/moments_90.root", analysis_info.output_path.Data(), dataset_name, maxL),"READ"));
-    std::unique_ptr<TFile> fin_135 = std::unique_ptr<TFile>(TFile::Open(TString::Format("%s%s/%i/full/data/moments_135.root", analysis_info.output_path.Data(), dataset_name, maxL),"READ"));
+    std::vector<std::unique_ptr<TFile>> fins;
+    for ( TString file_label : analysis_info.independent_files) {
+        fins.emplace_back(TFile::Open(TString::Format("%s%s/%i/full/data/moments_%s.root", analysis_info.output_path.Data(), dataset_name, maxL, file_label.Data()),"READ"));
+        if (fins.back() == nullptr) {
+            std::cout << TString::Format("%s%s/%i/full/data/moments_%s.root", analysis_info.output_path.Data(), dataset_name, maxL, file_label.Data()) << "does not exist" << std::endl;
+        }
+    }
     std::unique_ptr<TFile> fout = std::unique_ptr<TFile>(TFile::Open(TString::Format("%s%s/%i/full/data/moments.root", analysis_info.output_path.Data(), dataset_name, maxL),"RECREATE"));
-    
     for (int alpha = 0; alpha <3; alpha++) {
         for (int L =0; L <= maxL; L++) {
             for (int M =0; M <= L; M++) { 
@@ -197,16 +199,34 @@ void aggregate_results(const char* dataset_name, int maxL, int num_bootstraps) {
                 }
                 for (TString fig_type : {"","_raw","_raw_acceptance_corrected","_acceptance_corrected","_acceptance_corrected_statistical","_raw_acceptance_corrected_statistical"}) {
                     TString fig_name = TString::Format("H_%i_%i_%i%s",alpha,L,M,fig_type.Data());
-                    TH1D* fig_0 = (TH1D*)fin_0->Get(fig_name);
-                    TH1D* fig_45 = (TH1D*)fin_45->Get(fig_name);
-                    TH1D* fig_90 = (TH1D*)fin_90->Get(fig_name);
-                    TH1D* fig_135 = (TH1D*)fin_135->Get(fig_name);
-                    TH1D* fig_full = (TH1D*)fig_0->Clone("temp");
+                    std::vector<TH1D*> figs;
+                    for ( unsigned int i = 0; i < fins.size(); i++) {
+                        figs.push_back((TH1D*)fins[i]->Get(fig_name));
+                        if (figs[i] == nullptr) {
+                            std::cout << "Couldn't find fig" << std::endl;
+                        }
+                    }
+                    TH1D* fig_full = (TH1D*)figs[0]->Clone("temp");
                     for (int bin = 1; bin <= analysis_info.n_bins; bin++) {
-                        double sum_of_inverse_variances = 1.0/pow(fig_0->GetBinError(bin),2)+1.0/pow(fig_45->GetBinError(bin),2)+1.0/pow(fig_90->GetBinError(bin),2)+1.0/pow(fig_135->GetBinError(bin),2);
-                        double weighted_sum = fig_0->GetBinContent(bin)/pow(fig_0->GetBinError(bin),2)+fig_45->GetBinContent(bin)/pow(fig_45->GetBinError(bin),2)+fig_90->GetBinContent(bin)/pow(fig_90->GetBinError(bin),2)+fig_135->GetBinContent(bin)/pow(fig_135->GetBinError(bin),2);
-                        fig_full->SetBinContent(bin,weighted_sum/sum_of_inverse_variances);
-                        fig_full->SetBinError(bin,1.0/sqrt(sum_of_inverse_variances));
+                        double sum_of_inverse_variances = 0.0;
+                        double weighted_sum = 0.0;
+                        bool any_nonzero_errors = false;
+                        for ( unsigned int i = 0; i < figs.size(); i++) {
+                            if ( figs[i]->GetBinError(bin) == 0.0) {
+                                continue;
+                            } else {
+                                any_nonzero_errors = true;
+                            }
+                            sum_of_inverse_variances += pow(figs[i]->GetBinError(bin),-2);
+                            weighted_sum += figs[i]->GetBinContent(bin)*pow(figs[i]->GetBinError(bin),-2);
+                            
+                        }
+                        if (!any_nonzero_errors) {
+                            fig_full->SetBinError(bin,0);
+                        } else {
+                            fig_full->SetBinContent(bin,weighted_sum/sum_of_inverse_variances);
+                            fig_full->SetBinError(bin,1.0/sqrt(sum_of_inverse_variances));
+                        }
                     }
                     fout->cd();
                     fig_full->Write(fig_name);
@@ -215,9 +235,8 @@ void aggregate_results(const char* dataset_name, int maxL, int num_bootstraps) {
             }
         }
     }
+    for ( unsigned int i = 0; i < fins.size(); i++) {
+        fins[i]->Close();
+    }
     fout->Close();
-    fin_0->Close();
-    fin_45->Close();
-    fin_90->Close();
-    fin_135->Close();
 }

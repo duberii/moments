@@ -18,11 +18,11 @@ void single_step_calculate_moments(const char* dataset_name, int maxL, int boots
     }
 
     //Create dataframe, filter, and define
-    for ( int polarization_angle : {0,45,90,135}) {
-        std::cout << "Beginning to process polarization angle " << polarization_angle << std::endl;
-        ROOT::RDataFrame dataframe_data("decayAngles",TString::Format(analysis_info.data_path.Data(),polarization_angle));
-        ROOT::RDataFrame dataframe_accMC("decayAngles",TString::Format(analysis_info.accMC_path.Data(),polarization_angle));
-        ROOT::RDataFrame dataframe_genMC("decayAngles",TString::Format(analysis_info.genMC_path.Data(),polarization_angle));
+    for ( TString file_label : analysis_info.independent_files) {
+        std::cout << "Beginning to process " << file_label << std::endl;
+        ROOT::RDataFrame dataframe_data("decayAngles", analysis_info.input_path + "/data_" + file_label + ".root");
+        ROOT::RDataFrame dataframe_accMC("decayAngles",analysis_info.input_path + "/accMC_" + file_label + ".root");
+        ROOT::RDataFrame dataframe_genMC("decayAngles",analysis_info.input_path + "/genMC_" + file_label + ".root");
         ROOT::RDF::Experimental::AddProgressBar(dataframe_data);
         ROOT::RDF::Experimental::AddProgressBar(dataframe_accMC);
         ROOT::RDF::Experimental::AddProgressBar(dataframe_genMC);
@@ -75,7 +75,7 @@ void single_step_calculate_moments(const char* dataset_name, int maxL, int boots
         //open output file
         moments_df_data.ForeachSlot([mv_ptr_data](unsigned int thread_num, double PolarizationDegree, double helCosTheta, double helPhi, double PolarizationAngleReac, double MesonMass, double full_weight){mv_ptr_data->make_moments_by_event(thread_num,PolarizationDegree, helCosTheta, helPhi,PolarizationAngleReac, MesonMass, full_weight);},{"PolarizationDegree","helCosTheta","helPhi","PolarizationAngleReac","MesonResonanceMass","FullWeight"});
         mv_data.compile_thread_results();
-        std::unique_ptr<TFile> fout_data(TFile::Open(TString::Format("%s/data/moments_%i.root",analysis_info.output_path.Data(),polarization_angle),"RECREATE"));
+        std::unique_ptr<TFile> fout_data(TFile::Open(TString::Format("%s/data/moments_%s.root",analysis_info.output_path.Data(),file_label.Data()),"RECREATE"));
         fout_data->cd();
         TH1D* massHist_data = massHistPtr_data.GetPtr();
         TH1D* baryonHist2_data = mass2HistPtr_data.GetPtr();
@@ -95,7 +95,7 @@ void single_step_calculate_moments(const char* dataset_name, int maxL, int boots
 
         moments_df_accMC.ForeachSlot([mv_ptr_accMC](unsigned int thread_num, double PolarizationDegree, double helCosTheta, double helPhi, double PolarizationAngleReac, double MesonMass, double full_weight){mv_ptr_accMC->make_moments_by_event(thread_num,PolarizationDegree, helCosTheta, helPhi,PolarizationAngleReac, MesonMass, full_weight);},{"PolarizationDegree","helCosTheta","helPhi","PolarizationAngleReac","MesonResonanceMass","FullWeight"});
         mv_accMC.compile_thread_results();
-        std::unique_ptr<TFile> fout_accMC(TFile::Open(TString::Format("%s/accMC/moments_%i.root",analysis_info.output_path.Data(),polarization_angle),"RECREATE"));
+        std::unique_ptr<TFile> fout_accMC(TFile::Open(TString::Format("%s/accMC/moments_%s.root",analysis_info.output_path.Data(),file_label.Data()),"RECREATE"));
         fout_accMC->cd();
         TH1D* massHist_accMC = massHistPtr_accMC.GetPtr();
         TH1D* baryonHist2_accMC = mass2HistPtr_accMC.GetPtr();
@@ -116,7 +116,7 @@ void single_step_calculate_moments(const char* dataset_name, int maxL, int boots
 
         moments_df_genMC.ForeachSlot([mv_ptr_genMC](unsigned int thread_num, double PolarizationDegree, double helCosTheta, double helPhi, double PolarizationAngleReac, double MesonMass, double full_weight){mv_ptr_genMC->make_moments_by_event(thread_num,PolarizationDegree, helCosTheta, helPhi,PolarizationAngleReac, MesonMass, full_weight);},{"PolarizationDegree","helCosTheta","helPhi","PolarizationAngleReac","MesonResonanceMass","FullWeight"});
         mv_genMC.compile_thread_results();
-        std::unique_ptr<TFile> fout_genMC(TFile::Open(TString::Format("%s/genMC/moments_%i.root",analysis_info.output_path.Data(), polarization_angle),"RECREATE"));
+        std::unique_ptr<TFile> fout_genMC(TFile::Open(TString::Format("%s/genMC/moments_%s.root",analysis_info.output_path.Data(), file_label.Data()),"RECREATE"));
         fout_genMC->cd();
         TH1D* massHist_genMC = massHistPtr_genMC.GetPtr();
         TH1D* baryonHist2_genMC = mass2HistPtr_genMC.GetPtr();
@@ -145,7 +145,7 @@ void single_step_calculate_moments(const char* dataset_name, int maxL, int boots
         acceptance_matrix.makeMatrix();
 
         //open output file
-        std::unique_ptr<TFile> acceptance_matrix_fout(TFile::Open(TString::Format("%s/accMC/acceptance_matrix_%i.root",analysis_info.output_path.Data(),polarization_angle),"RECREATE"));
+        std::unique_ptr<TFile> acceptance_matrix_fout(TFile::Open(TString::Format("%s/accMC/acceptance_matrix_%s.root",analysis_info.output_path.Data(),file_label.Data()),"RECREATE"));
         acceptance_matrix_fout->cd();
         std::vector<TMatrixD> inverse_acceptance_matrices;
         inverse_acceptance_matrices.reserve(acceptance_matrix.acceptance_matrices.size());
@@ -251,7 +251,7 @@ void single_step_calculate_moments(const char* dataset_name, int maxL, int boots
             }
         }
         std::cout << "saving acceptance corrected moments" << std::endl;
-        fout_data.reset(TFile::Open(TString::Format("%s/data/moments_%i.root",analysis_info.output_path.Data(),polarization_angle),"UPDATE"));
+        fout_data.reset(TFile::Open(TString::Format("%s/data/moments_%s.root",analysis_info.output_path.Data(),file_label.Data()),"UPDATE"));
         fout_data->cd();
         for (int alpha=0; alpha < 3; alpha++) {
             for (int L=0; L <= maxL; L++) {
@@ -273,7 +273,7 @@ void single_step_calculate_moments(const char* dataset_name, int maxL, int boots
         fout_data->Close();
         fout_data.reset();
 
-        fout_accMC.reset(TFile::Open(TString::Format("%s/accMC/moments_%i.root",analysis_info.output_path.Data(),polarization_angle),"UPDATE"));
+        fout_accMC.reset(TFile::Open(TString::Format("%s/accMC/moments_%s.root",analysis_info.output_path.Data(),file_label.Data()),"UPDATE"));
         fout_accMC->cd();
         for (int alpha=0; alpha < 3; alpha++) {
             for (int L=0; L <= maxL; L++) {

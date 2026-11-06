@@ -15,18 +15,18 @@ void single_step_calculate_moments_parasite(const char* dataset_name, int maxL, 
         parasite_input_path=TString::Format("%s%s/%i/full",analysis_info.output_path.Data(), dataset_name, largest_L);
         analysis_info.output_path=TString::Format("%s%s/%i/full", analysis_info.output_path.Data(), dataset_name, maxL);
     }
-    for ( int polarization_angle : {0,45,90,135}) {
+    for ( TString file_label : analysis_info.independent_files) {
 
         //Read moments histograms from file
 
-        TFile* fin_data = TFile::Open(TString::Format("%s/data/moments_%i.root",parasite_input_path.Data(), polarization_angle),"READ");
-        TFile* fin_accMC = TFile::Open(TString::Format("%s/accMC/moments_%i.root",parasite_input_path.Data(), polarization_angle),"READ");
-        TFile* fin_genMC = TFile::Open(TString::Format("%s/genMC/moments_%i.root",parasite_input_path.Data(), polarization_angle),"READ");
-        TFile* fin_acceptance_matrices = TFile::Open(TString::Format("%s/accMC/acceptance_matrix_%i.root",parasite_input_path.Data(), polarization_angle),"READ");
+        TFile* fin_data = TFile::Open(TString::Format("%s/data/moments_%s.root",parasite_input_path.Data(), file_label.Data()),"READ");
+        TFile* fin_accMC = TFile::Open(TString::Format("%s/accMC/moments_%s.root",parasite_input_path.Data(), file_label.Data()),"READ");
+        TFile* fin_genMC = TFile::Open(TString::Format("%s/genMC/moments_%s.root",parasite_input_path.Data(), file_label.Data()),"READ");
+        TFile* fin_acceptance_matrices = TFile::Open(TString::Format("%s/accMC/acceptance_matrix_%s.root",parasite_input_path.Data(), file_label.Data()),"READ");
 
         //open output file
         std::cout << "Copying histograms from maxL=" << largest_L << std::endl;
-        std::unique_ptr<TFile> fout_data(TFile::Open(TString::Format("%s/data/moments_%i.root",analysis_info.output_path.Data(), polarization_angle),"RECREATE"));
+        std::unique_ptr<TFile> fout_data(TFile::Open(TString::Format("%s/data/moments_%s.root",analysis_info.output_path.Data(), file_label.Data()),"RECREATE"));
         fout_data->cd();
         TH1D* massHist_data = (TH1D*)fin_data->Get("MesonMass");
         TH1D* baryonHist2_data = (TH1D*)fin_data->Get("Baryon2Mass");
@@ -59,7 +59,7 @@ void single_step_calculate_moments_parasite(const char* dataset_name, int maxL, 
         fout_data.reset();
         gROOT->cd();
 
-        std::unique_ptr<TFile> fout_accMC(TFile::Open(TString::Format("%s/accMC/moments_%i.root",analysis_info.output_path.Data(), polarization_angle),"RECREATE"));
+        std::unique_ptr<TFile> fout_accMC(TFile::Open(TString::Format("%s/accMC/moments_%s.root",analysis_info.output_path.Data(), file_label.Data()),"RECREATE"));
         fout_accMC->cd();
         TH1D* massHist_accMC = (TH1D*)fin_accMC->Get("MesonMass");
         TH1D* baryonHist2_accMC = (TH1D*)fin_accMC->Get("Baryon2Mass");
@@ -86,7 +86,7 @@ void single_step_calculate_moments_parasite(const char* dataset_name, int maxL, 
         fout_accMC.reset();
         gROOT->cd();
 
-        std::unique_ptr<TFile> fout_genMC(TFile::Open(TString::Format("%s/genMC/moments_%i.root",analysis_info.output_path.Data(), polarization_angle),"RECREATE"));
+        std::unique_ptr<TFile> fout_genMC(TFile::Open(TString::Format("%s/genMC/moments_%s.root",analysis_info.output_path.Data(), file_label.Data()),"RECREATE"));
         fout_genMC->cd();
         TH1D* massHist_genMC = (TH1D*)fin_genMC->Get("MesonMass");
         massHist_genMC->SetDirectory(nullptr);
@@ -124,7 +124,7 @@ void single_step_calculate_moments_parasite(const char* dataset_name, int maxL, 
 
         MomentsArray larger_moment_array(largest_L);
         MomentsArray smaller_moment_array(maxL);
-        std::unique_ptr<TFile> acceptance_matrix_fout(TFile::Open(TString::Format("%s/accMC/acceptance_matrix_%i.root",analysis_info.output_path.Data(),polarization_angle),"RECREATE"));
+        std::unique_ptr<TFile> acceptance_matrix_fout(TFile::Open(TString::Format("%s/accMC/acceptance_matrix_%s.root",analysis_info.output_path.Data(),file_label.Data()),"RECREATE"));
         acceptance_matrix_fout->cd();
         std::vector<TMatrixD> inverse_acceptance_matrices;
         inverse_acceptance_matrices.reserve(analysis_info.n_bins);
@@ -259,7 +259,7 @@ void single_step_calculate_moments_parasite(const char* dataset_name, int maxL, 
             }
         }
         std::cout << "saving acceptance corrected moments" << std::endl;
-        fout_data.reset(TFile::Open(TString::Format("%s/data/moments_%i.root",analysis_info.output_path.Data(),polarization_angle),"UPDATE"));
+        fout_data.reset(TFile::Open(TString::Format("%s/data/moments_%s.root",analysis_info.output_path.Data(),file_label.Data()),"UPDATE"));
         fout_data->cd();
         for (int alpha=0; alpha < 3; alpha++) {
             for (int L=0; L <= maxL; L++) {
@@ -281,7 +281,7 @@ void single_step_calculate_moments_parasite(const char* dataset_name, int maxL, 
         fout_data->Close();
         fout_data.reset();
 
-        fout_accMC.reset(TFile::Open(TString::Format("%s/accMC/moments_%i.root",analysis_info.output_path.Data(),polarization_angle),"UPDATE"));
+        fout_accMC.reset(TFile::Open(TString::Format("%s/accMC/moments_%s.root",analysis_info.output_path.Data(),file_label.Data()),"UPDATE"));
         fout_accMC->cd();
         for (int alpha=0; alpha < 3; alpha++) {
             for (int L=0; L <= maxL; L++) {

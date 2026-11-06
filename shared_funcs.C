@@ -85,9 +85,8 @@ class ReactionSpecs{
 class AnalysisInfo {
     public:
     AnalysisInfo() = default;
-    TString genMC_path;
-    TString accMC_path;
-    TString data_path;
+    TString input_path;
+    std::vector<TString> independent_files;
     TString output_path;
     TString tree_name;
 
@@ -98,6 +97,7 @@ class AnalysisInfo {
     TString non_gen_MC_cuts;
     ReactionSpecs reaction;
     bool background_subtract;
+
 };
 
 AnalysisInfo getAnalysisInfo(std::string dataset_name) {
@@ -105,9 +105,8 @@ AnalysisInfo getAnalysisInfo(std::string dataset_name) {
     analysis_info.tree_name = "decayAngles";
     analysis_info.output_path = "/N/u/rdube/Quartz/work/moments_workflow/results/";
     if (dataset_name == "kpkm_highM") {
-        analysis_info.genMC_path = "/N/slate/rdube/moments/kpkm/highM/genMC_kpkm_pol%i.root";
-        analysis_info.accMC_path = "/N/slate/rdube/moments/kpkm/highM/accMC_kpkm_pol%i.root";
-        analysis_info.data_path = "/N/slate/rdube/moments/kpkm/highM/data_kpkm_pol%i.root";
+        analysis_info.independent_files  = {"kpkm_pol0","kpkm_pol45","kpkm_pol90","kpkm_pol135"};
+        analysis_info.input_path = "/N/slate/rdube/moments/kpkm/highM";
         analysis_info.background_subtract = true;
         analysis_info.meson_mass_min = 1.1;
         analysis_info.meson_mass_max = 2.6;
@@ -116,20 +115,18 @@ AnalysisInfo getAnalysisInfo(std::string dataset_name) {
         analysis_info.n_bins = 30;
         analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{+}","K^{-}"});;
     } else if (dataset_name =="kskl_Spring_2020") {
-        analysis_info.genMC_path = "/N/slate/rdube/moments/kskl/Spring_2020/genMC_kskl_pol%i.root";
-        analysis_info.accMC_path = "/N/slate/rdube/moments/kskl/Spring_2020/accMC_kskl_pol%i.root";
-        analysis_info.data_path = "/N/slate/rdube/moments/kskl/Spring_2020/data_kskl_pol%i.root";
+        analysis_info.independent_files  = {"kskl_pol0","kskl_pol45","kskl_pol90","kskl_pol135"};
+        analysis_info.input_path = "/N/slate/rdube/moments/kskl/Spring_2020";
         analysis_info.background_subtract = true;
         analysis_info.meson_mass_min = 1.2;
-        analysis_info.meson_mass_max = 2.56;
-        analysis_info.n_bins = 34;
+        analysis_info.meson_mass_max = 2.6;
+        analysis_info.n_bins = 28;
         analysis_info.global_cuts= TString::Format("abs(BeamEnergy-8.3)<0.3&&abs(MandelstamNegT-0.45)<0.25&&MesonResonanceMass>%.3f&&MesonResonanceMass<%.3f", analysis_info.meson_mass_min, analysis_info.meson_mass_max);
         analysis_info.non_gen_MC_cuts = "abs(ProtonVertexZ-65)<13&&NumUnusedTracks==0&&NumUnusedShowers<3&&KSFlightSignificance>6&&Chi2NDF<2&&abs(MissingMass-0.5)<0.2";
         analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{0}_{S}","K^{0}_{L}"});
     } else if (dataset_name =="kskl_GlueX_I") {
-        analysis_info.genMC_path = "/N/slate/rdube/moments/kskl/GlueX_I/genMC_kskl_*_pol%i.root";
-        analysis_info.accMC_path = "/N/slate/rdube/moments/kskl/GlueX_I/accMC_kskl_*_pol%i.root";
-        analysis_info.data_path = "/N/slate/rdube/moments/kskl/GlueX_I/data_kskl_*_pol%i.root";
+        analysis_info.independent_files  = {"kskl_fall_2018_pol0","kskl_fall_2018_pol45","kskl_fall_2018_pol90","kskl_fall_2018_pol135","kskl_spring_2017_pol0","kskl_spring_2017_pol45","kskl_spring_2017_pol90","kskl_spring_2017_pol135","kskl_spring_2018_pol0","kskl_spring_2018_pol45","kskl_spring_2018_pol90","kskl_spring_2018_pol135"};
+        analysis_info.input_path = "/N/slate/rdube/moments/kskl/GlueX_I";
         analysis_info.background_subtract = true;
         analysis_info.meson_mass_min = 1.1;
         analysis_info.meson_mass_max = 2.6;
@@ -137,10 +134,29 @@ AnalysisInfo getAnalysisInfo(std::string dataset_name) {
         analysis_info.global_cuts= TString::Format("abs(BeamEnergy-8.5)<0.3&&abs(MandelstamNegT-0.45)<0.25&&MesonResonanceMass>%.3f&&MesonResonanceMass<%.3f", analysis_info.meson_mass_min, analysis_info.meson_mass_max);
         analysis_info.non_gen_MC_cuts = "abs(ProtonVertexZ-65)<13&&NumUnusedTracks==0&&NumUnusedShowers<3&&KSFlightSignificance>6&&Chi2NDF<2&&abs(MissingMass-0.5)<0.2";
         analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{0}_{S}","K^{0}_{L}"});
+    } else if (dataset_name =="kskl_GlueX_I_") {
+        analysis_info.independent_files  = {"kskl_fall_2018_pol0","kskl_fall_2018_pol45","kskl_fall_2018_pol90","kskl_fall_2018_pol135","kskl_spring_2017_pol0","kskl_spring_2017_pol45","kskl_spring_2017_pol90","kskl_spring_2017_pol135","kskl_spring_2018_pol0","kskl_spring_2018_pol45","kskl_spring_2018_pol90","kskl_spring_2018_pol135"};
+        analysis_info.input_path = "/N/slate/rdube/moments/kskl/GlueX_I";
+        analysis_info.background_subtract = true;
+        analysis_info.meson_mass_min = 1.1;
+        analysis_info.meson_mass_max = 2.6;
+        analysis_info.n_bins = 30;
+        analysis_info.global_cuts= TString::Format("abs(BeamEnergy-8.5)<0.3&&abs(MandelstamNegT-0.45)<0.25&&MesonResonanceMass>%.3f&&MesonResonanceMass<%.3f", analysis_info.meson_mass_min, analysis_info.meson_mass_max);
+        analysis_info.non_gen_MC_cuts = "abs(ProtonVertexZ-65)<13&&NumUnusedTracks==0&&NumUnusedShowers<3&&KSFlightSignificance>6&&Chi2NDF<2&&abs(MissingMass-0.5)<0.2";
+        analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{0}_{S}","K^{0}_{L}"});
+    } else if (dataset_name =="kskl_GlueX_I_no_gent") {
+        analysis_info.independent_files  = {"kskl_fall_2018_pol0","kskl_fall_2018_pol45","kskl_fall_2018_pol90","kskl_fall_2018_pol135","kskl_spring_2017_pol0","kskl_spring_2017_pol45","kskl_spring_2017_pol90","kskl_spring_2017_pol135","kskl_spring_2018_pol0","kskl_spring_2018_pol45","kskl_spring_2018_pol90","kskl_spring_2018_pol135"};
+        analysis_info.input_path = "/N/slate/rdube/moments/kskl/GlueX_I";
+        analysis_info.background_subtract = true;
+        analysis_info.meson_mass_min = 1.1;
+        analysis_info.meson_mass_max = 2.6;
+        analysis_info.n_bins = 30;
+        analysis_info.global_cuts= TString::Format("abs(BeamEnergy-8.5)<0.3&&MesonResonanceMass>%.3f&&MesonResonanceMass<%.3f", analysis_info.meson_mass_min, analysis_info.meson_mass_max);
+        analysis_info.non_gen_MC_cuts = "abs(ProtonVertexZ-65)<13&&abs(MandelstamNegT-0.45)<0.25&&NumUnusedTracks==0&&NumUnusedShowers<3&&KSFlightSignificance>6&&Chi2NDF<2&&abs(MissingMass-0.5)<0.2";
+        analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{0}_{S}","K^{0}_{L}"});
     } else if (dataset_name =="kskl_spring_2020_nobaryon") {
-        analysis_info.genMC_path = "/N/slate/rdube/moments/kskl/Spring_2020/genMC_kskl_pol%i.root";
-        analysis_info.accMC_path = "/N/slate/rdube/moments/kskl/Spring_2020/accMC_kskl_pol%i.root";
-        analysis_info.data_path = "/N/slate/rdube/moments/kskl/Spring_2020/data_kskl_pol%i.root";
+        analysis_info.independent_files  = {"kskl_pol0","kskl_pol45","kskl_pol90","kskl_pol135"};
+        analysis_info.input_path = "/N/slate/rdube/moments/kskl/Spring_2020";
         analysis_info.background_subtract = true;
         analysis_info.meson_mass_min = 1.2;
         analysis_info.meson_mass_max = 1.8;
@@ -149,9 +165,8 @@ AnalysisInfo getAnalysisInfo(std::string dataset_name) {
         analysis_info.non_gen_MC_cuts = "abs(ProtonVertexZ-65)<13&&NumUnusedTracks==0&&NumUnusedShowers<3&&KSFlightSignificance>6&&Chi2NDF<2&&abs(MissingMass-0.5)<0.2&&abs(VanHoveOmega-4.7123889)<0.52359877";
         analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{0}_{S}","K^{0}_{L}"});
     } else if (dataset_name =="kskl_spring_2020_withbaryon") {
-        analysis_info.genMC_path = "/N/slate/rdube/moments/kskl/Spring_2020/genMC_kskl_pol%i.root";
-        analysis_info.accMC_path = "/N/slate/rdube/moments/kskl/Spring_2020/accMC_kskl_pol%i.root";
-        analysis_info.data_path = "/N/slate/rdube/moments/kskl/Spring_2020/data_kskl_pol%i.root";
+        analysis_info.independent_files  = {"kskl_pol0","kskl_pol45","kskl_pol90","kskl_pol135"};
+        analysis_info.input_path = "/N/slate/rdube/moments/kskl/Spring_2020";
         analysis_info.background_subtract = true;
         analysis_info.meson_mass_min = 1.2;
         analysis_info.meson_mass_max = 1.8;
@@ -160,9 +175,8 @@ AnalysisInfo getAnalysisInfo(std::string dataset_name) {
         analysis_info.non_gen_MC_cuts = "abs(ProtonVertexZ-65)<13&&NumUnusedTracks==0&&NumUnusedShowers<3&&KSFlightSignificance>6&&Chi2NDF<2&&abs(MissingMass-0.5)<0.2";
         analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{0}_{S}","K^{0}_{L}"});
     } else if (dataset_name == "kpkm_highM_nobaryon") {
-        analysis_info.genMC_path = "/N/slate/rdube/moments/kpkm/highM/genMC_kpkm_pol%i.root";
-        analysis_info.accMC_path = "/N/slate/rdube/moments/kpkm/highM/accMC_kpkm_pol%i.root";
-        analysis_info.data_path = "/N/slate/rdube/moments/kpkm/highM/data_kpkm_pol%i.root";
+        analysis_info.independent_files  = {"kpkm_pol0","kpkm_pol45","kpkm_pol90","kpkm_pol135"};
+        analysis_info.input_path = "/N/slate/rdube/moments/kpkm/highM";
         analysis_info.background_subtract = true;
         analysis_info.meson_mass_min = 1.2;
         analysis_info.meson_mass_max = 2.56;
