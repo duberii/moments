@@ -87,6 +87,9 @@ void single_step_calculate_moments(const char* dataset_name, int maxL, int boots
         massHist_data->Write();
         for (int i = 0; i < mv_data.moments_histograms.size(); i++) {
             mv_data.moments_histograms[i]->Write();
+            if (analysis_info.use_luminosities) {
+                mv_data.moments_histograms_raw[i]->Scale(6.2832/(analysis_info.luminosities[file_label]*analysis_info.branching_fraction));
+            }
             mv_data.moments_histograms_raw[i]->Write();
         }
         fout_data->Close();
@@ -107,6 +110,9 @@ void single_step_calculate_moments(const char* dataset_name, int maxL, int boots
         massHist_accMC->Write();
         for (int i = 0; i < mv_accMC.moments_histograms.size(); i++) {
             mv_accMC.moments_histograms[i]->Write();
+            if (analysis_info.use_luminosities) {
+                mv_accMC.moments_histograms_raw[i]->Scale(6.2832/(analysis_info.luminosities[file_label]*analysis_info.branching_fraction));
+            }
             mv_accMC.moments_histograms_raw[i]->Write();
         }
         fout_accMC->Close();
@@ -129,6 +135,9 @@ void single_step_calculate_moments(const char* dataset_name, int maxL, int boots
         massHist_genMC->SetDirectory(nullptr);
         for (int i = 0; i < mv_genMC.moments_histograms.size(); i++) {
             mv_genMC.moments_histograms[i]->Write();
+            if (analysis_info.use_luminosities) {
+                mv_genMC.moments_histograms_raw[i]->Scale(6.2832/(analysis_info.luminosities[file_label]*analysis_info.branching_fraction));
+            }
             mv_genMC.moments_histograms_raw[i]->Write();
         }
         fout_genMC->Close();

@@ -90,6 +90,9 @@ class AnalysisInfo {
     TString output_path;
     TString tree_name;
 
+    std::map<TString,double> luminosities;
+    bool use_luminosities;
+
     double meson_mass_min;
     double meson_mass_max;
     TString global_cuts;
@@ -98,12 +101,15 @@ class AnalysisInfo {
     ReactionSpecs reaction;
     bool background_subtract;
 
+    double branching_fraction;
+
 };
 
 AnalysisInfo getAnalysisInfo(std::string dataset_name) {
     AnalysisInfo analysis_info;
     analysis_info.tree_name = "decayAngles";
     analysis_info.output_path = "/N/u/rdube/Quartz/work/moments_workflow/results/";
+    analysis_info.branching_fraction=1.0;
     if (dataset_name == "kpkm_highM") {
         analysis_info.independent_files  = {"kpkm_pol0","kpkm_pol45","kpkm_pol90","kpkm_pol135"};
         analysis_info.input_path = "/N/slate/rdube/moments/kpkm/highM";
@@ -113,9 +119,11 @@ AnalysisInfo getAnalysisInfo(std::string dataset_name) {
         analysis_info.global_cuts= TString::Format("abs(BeamEnergy - 8.3)< 0.3&&abs(MandelstamNegT-0.45)<0.25&&MesonResonanceMass>%.3f&&MesonResonanceMass<%.3f", analysis_info.meson_mass_min, analysis_info.meson_mass_max);
         analysis_info.non_gen_MC_cuts = "Chi2pipiMinusChi2KK>10&&Chi2NDF<5&&NumUnusedTracks==0&&NumUnusedShowers==0";
         analysis_info.n_bins = 30;
-        analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{+}","K^{-}"});;
+        analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{+}","K^{-}"});
+        analysis_info.use_luminosities = false;
     } else if (dataset_name =="kskl_Spring_2020") {
         analysis_info.independent_files  = {"kskl_pol0","kskl_pol45","kskl_pol90","kskl_pol135"};
+        analysis_info.luminosities = std::map<TString,double>({{"kskl_pol0",33.2179},{"kskl_pol45",32.9354},{"kskl_pol90",31.1341},{"kskl_pol135",31.9134}});
         analysis_info.input_path = "/N/slate/rdube/moments/kskl/Spring_2020";
         analysis_info.background_subtract = true;
         analysis_info.meson_mass_min = 1.2;
@@ -124,6 +132,8 @@ AnalysisInfo getAnalysisInfo(std::string dataset_name) {
         analysis_info.global_cuts= TString::Format("abs(BeamEnergy-8.3)<0.3&&abs(MandelstamNegT-0.45)<0.25&&MesonResonanceMass>%.3f&&MesonResonanceMass<%.3f", analysis_info.meson_mass_min, analysis_info.meson_mass_max);
         analysis_info.non_gen_MC_cuts = "abs(ProtonVertexZ-65)<13&&NumUnusedTracks==0&&NumUnusedShowers<3&&KSFlightSignificance>6&&Chi2NDF<2&&abs(MissingMass-0.5)<0.2";
         analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{0}_{S}","K^{0}_{L}"});
+        analysis_info.use_luminosities = true;
+        analysis_info.branching_fraction = 0.6920;
     } else if (dataset_name =="kskl_GlueX_I") {
         analysis_info.independent_files  = {"kskl_fall_2018_pol0","kskl_fall_2018_pol45","kskl_fall_2018_pol90","kskl_fall_2018_pol135","kskl_spring_2017_pol0","kskl_spring_2017_pol45","kskl_spring_2017_pol90","kskl_spring_2017_pol135","kskl_spring_2018_pol0","kskl_spring_2018_pol45","kskl_spring_2018_pol90","kskl_spring_2018_pol135"};
         analysis_info.input_path = "/N/slate/rdube/moments/kskl/GlueX_I";
@@ -134,8 +144,12 @@ AnalysisInfo getAnalysisInfo(std::string dataset_name) {
         analysis_info.global_cuts= TString::Format("abs(BeamEnergy-8.5)<0.3&&abs(MandelstamNegT-0.45)<0.25&&MesonResonanceMass>%.3f&&MesonResonanceMass<%.3f", analysis_info.meson_mass_min, analysis_info.meson_mass_max);
         analysis_info.non_gen_MC_cuts = "abs(ProtonVertexZ-65)<13&&NumUnusedTracks==0&&NumUnusedShowers<3&&KSFlightSignificance>6&&Chi2NDF<2&&abs(MissingMass-0.5)<0.2";
         analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{0}_{S}","K^{0}_{L}"});
-    } else if (dataset_name =="kskl_GlueX_I_") {
-        analysis_info.independent_files  = {"kskl_fall_2018_pol0","kskl_fall_2018_pol45","kskl_fall_2018_pol90","kskl_fall_2018_pol135","kskl_spring_2017_pol0","kskl_spring_2017_pol45","kskl_spring_2017_pol90","kskl_spring_2017_pol135","kskl_spring_2018_pol0","kskl_spring_2018_pol45","kskl_spring_2018_pol90","kskl_spring_2018_pol135"};
+        analysis_info.luminosities = std::map<TString,double>({{"kskl_spring_2017_pol0",5.1977},{"kskl_spring_2017_pol45",4.95599},{"kskl_spring_2017_pol90",5.42077},{"kskl_spring_2017_pol135",5.09782},{"kskl_spring_2018_pol0",15.0207},{"kskl_spring_2018_pol45",14.6655},{"kskl_spring_2018_pol90",14.472},{"kskl_spring_2018_pol135",15.2797},{"kskl_fall_2018_pol0",10.1941},{"kskl_fall_2018_pol45",9.28027},{"kskl_fall_2018_pol90",9.36105},{"kskl_fall_2018_pol135",9.01873}});
+        analysis_info.use_luminosities = true;
+        analysis_info.branching_fraction = 0.6920;
+    } else if (dataset_name =="kskl_GlueX_I_combined_runperiods") {
+        analysis_info.independent_files  = {"kskl_*_pol0","kskl_*_pol45","kskl_*_pol90","kskl_*_pol135"};
+        analysis_info.luminosities = std::map<TString,double>({{"kskl_*_pol0",5.1977+15.0207+10.1941},{"kskl_*_pol45",4.95599+14.6655+9.28027},{"kskl_*_pol90",5.42077+14.472+9.36105},{"kskl_*_pol135",5.09782+15.2797+9.01873}});
         analysis_info.input_path = "/N/slate/rdube/moments/kskl/GlueX_I";
         analysis_info.background_subtract = true;
         analysis_info.meson_mass_min = 1.1;
@@ -144,46 +158,8 @@ AnalysisInfo getAnalysisInfo(std::string dataset_name) {
         analysis_info.global_cuts= TString::Format("abs(BeamEnergy-8.5)<0.3&&abs(MandelstamNegT-0.45)<0.25&&MesonResonanceMass>%.3f&&MesonResonanceMass<%.3f", analysis_info.meson_mass_min, analysis_info.meson_mass_max);
         analysis_info.non_gen_MC_cuts = "abs(ProtonVertexZ-65)<13&&NumUnusedTracks==0&&NumUnusedShowers<3&&KSFlightSignificance>6&&Chi2NDF<2&&abs(MissingMass-0.5)<0.2";
         analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{0}_{S}","K^{0}_{L}"});
-    } else if (dataset_name =="kskl_GlueX_I_no_gent") {
-        analysis_info.independent_files  = {"kskl_fall_2018_pol0","kskl_fall_2018_pol45","kskl_fall_2018_pol90","kskl_fall_2018_pol135","kskl_spring_2017_pol0","kskl_spring_2017_pol45","kskl_spring_2017_pol90","kskl_spring_2017_pol135","kskl_spring_2018_pol0","kskl_spring_2018_pol45","kskl_spring_2018_pol90","kskl_spring_2018_pol135"};
-        analysis_info.input_path = "/N/slate/rdube/moments/kskl/GlueX_I";
-        analysis_info.background_subtract = true;
-        analysis_info.meson_mass_min = 1.1;
-        analysis_info.meson_mass_max = 2.6;
-        analysis_info.n_bins = 30;
-        analysis_info.global_cuts= TString::Format("abs(BeamEnergy-8.5)<0.3&&MesonResonanceMass>%.3f&&MesonResonanceMass<%.3f", analysis_info.meson_mass_min, analysis_info.meson_mass_max);
-        analysis_info.non_gen_MC_cuts = "abs(ProtonVertexZ-65)<13&&abs(MandelstamNegT-0.45)<0.25&&NumUnusedTracks==0&&NumUnusedShowers<3&&KSFlightSignificance>6&&Chi2NDF<2&&abs(MissingMass-0.5)<0.2";
-        analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{0}_{S}","K^{0}_{L}"});
-    } else if (dataset_name =="kskl_spring_2020_nobaryon") {
-        analysis_info.independent_files  = {"kskl_pol0","kskl_pol45","kskl_pol90","kskl_pol135"};
-        analysis_info.input_path = "/N/slate/rdube/moments/kskl/Spring_2020";
-        analysis_info.background_subtract = true;
-        analysis_info.meson_mass_min = 1.2;
-        analysis_info.meson_mass_max = 1.8;
-        analysis_info.n_bins = 12;
-        analysis_info.global_cuts= TString::Format("abs(MandelstamNegT-0.45)<0.25&&abs(BeamEnergy-8.3)<0.3&&MesonResonanceMass>%.3f&&MesonResonanceMass<%.3f", analysis_info.meson_mass_min, analysis_info.meson_mass_max);
-        analysis_info.non_gen_MC_cuts = "abs(ProtonVertexZ-65)<13&&NumUnusedTracks==0&&NumUnusedShowers<3&&KSFlightSignificance>6&&Chi2NDF<2&&abs(MissingMass-0.5)<0.2&&abs(VanHoveOmega-4.7123889)<0.52359877";
-        analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{0}_{S}","K^{0}_{L}"});
-    } else if (dataset_name =="kskl_spring_2020_withbaryon") {
-        analysis_info.independent_files  = {"kskl_pol0","kskl_pol45","kskl_pol90","kskl_pol135"};
-        analysis_info.input_path = "/N/slate/rdube/moments/kskl/Spring_2020";
-        analysis_info.background_subtract = true;
-        analysis_info.meson_mass_min = 1.2;
-        analysis_info.meson_mass_max = 1.8;
-        analysis_info.n_bins = 12;
-        analysis_info.global_cuts= TString::Format("abs(BeamEnergy-8.3)<0.3&&abs(MandelstamNegT-0.45)<0.25&&MesonResonanceMass>%.3f&&MesonResonanceMass<%.3f", analysis_info.meson_mass_min, analysis_info.meson_mass_max);
-        analysis_info.non_gen_MC_cuts = "abs(ProtonVertexZ-65)<13&&NumUnusedTracks==0&&NumUnusedShowers<3&&KSFlightSignificance>6&&Chi2NDF<2&&abs(MissingMass-0.5)<0.2";
-        analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{0}_{S}","K^{0}_{L}"});
-    } else if (dataset_name == "kpkm_highM_nobaryon") {
-        analysis_info.independent_files  = {"kpkm_pol0","kpkm_pol45","kpkm_pol90","kpkm_pol135"};
-        analysis_info.input_path = "/N/slate/rdube/moments/kpkm/highM";
-        analysis_info.background_subtract = true;
-        analysis_info.meson_mass_min = 1.2;
-        analysis_info.meson_mass_max = 2.56;
-        analysis_info.global_cuts= TString::Format("abs(BeamEnergy - 8.3)< 0.3&&abs(MandelstamNegT-0.45)<0.25&&MesonResonanceMass>%.3f&&MesonResonanceMass<%.3f", analysis_info.meson_mass_min, analysis_info.meson_mass_max);
-        analysis_info.non_gen_MC_cuts = "Chi2pipiMinusChi2KK>10&&Chi2NDF<5&&NumUnusedTracks==0&&NumUnusedShowers==0&&abs(VanHoveOmega-4.7123889)<0.52359877";
-        analysis_info.n_bins = 34;
-        analysis_info.reaction = ReactionSpecs({"#gamma","p"},{"p","K^{+}","K^{-}"});
+        analysis_info.use_luminosities = true;
+        analysis_info.branching_fraction = 0.6920;
     } else {
         std::cout << "Analysis name not found." << std::endl;
     }
@@ -625,7 +601,7 @@ class MomentsVector {
 };
 
 void compare_results_files(std::vector<TString> file_paths, std::vector<TString> names, TString output_dir, int L_max=6) {
-    std::vector<Color_t> colors = {kRed+2,kBlue+2, kGreen+2, kMagenta+2, kYellow+2};
+    std::vector<Color_t> colors = {kRed+1,kBlue+1, kGreen+3, kMagenta+2, kYellow+2};
     std::vector<std::unique_ptr<TFile>> files_to_compare;
     for (TString file_name : file_paths) {
         files_to_compare.push_back(std::unique_ptr<TFile>(TFile::Open(file_name,"READ")));
@@ -645,28 +621,24 @@ void compare_results_files(std::vector<TString> file_paths, std::vector<TString>
 
                 TLegend legend(0.2,0.15);
                 TLegend legend_raw(0.2,0.15);
-                bool all_present = true;
+                bool any_present = false;
                 for (unsigned int i = 0; i < files_to_compare.size(); i++) {
                     TH1D* moment_histogram = (TH1D*)files_to_compare[i]->Get(TString::Format("H_%i_%i_%i_acceptance_corrected",alpha,L,M));
                     if (!moment_histogram) {
-                        all_present = false;
-                        std::cout << "Missing " << TString::Format("H_%i_%i_%i_acceptance_corrected",alpha,L,M) << std::endl; 
-                        break;
+                        continue;
                     }
                     moment_histogram->SetLineColor(colors[i]);
+                    moment_histogram->SetMarkerColor(colors[i]);
                     legend.AddEntry(moment_histogram, names[i], "lp");
                     moments.Add(moment_histogram);
                     TH1D* moment_histogram_raw = (TH1D*)files_to_compare[i]->Get(TString::Format("H_%i_%i_%i_raw_acceptance_corrected",alpha,L,M));
-                    if (!moment_histogram_raw) {
-                        all_present = false;
-                        std::cout << "Missing " << TString::Format("H_%i_%i_%i_raw_acceptance_corrected",alpha,L,M) << std::endl; 
-                        break;
-                    }
                     moment_histogram_raw->SetLineColor(colors[i]);
+                    moment_histogram_raw->SetMarkerColor(colors[i]);
                     legend_raw.AddEntry(moment_histogram_raw, names[i], "lp");
                     moments_raw.Add(moment_histogram_raw);
+                    any_present = true;
                 }
-                if (!all_present) {
+                if (!any_present) {
                     continue;
                 }
                 canvas.cd();
@@ -674,17 +646,17 @@ void compare_results_files(std::vector<TString> file_paths, std::vector<TString>
                 TLine line(moments.GetXaxis()->GetXmin(),0,moments.GetXaxis()->GetXmax(),0);
                 moments.GetXaxis()->SetTitle("K_{S} K_{L} Mass (GeV/c^{2})");
                 moments.GetYaxis()->SetTitle(TString::Format("#LT_{}H^{%i}(%i%i)#GT",alpha,L,M).Data());
-                line.Draw();
                 moments.Draw("nostack noclear E1 X0");
+                line.Draw();
                 legend.Draw();
                 canvas.SaveAs(TString::Format("%s/H_%i_%i_%i.png",output_dir.Data(), alpha, L, M));
 
                 canvas_raw.cd();
                 moments_raw.Draw("nostack E1 X0");
-                line.Draw();
                 moments_raw.GetXaxis()->SetTitle("K_{S} K_{L} Mass (GeV/c^{2})");
                 moments_raw.GetYaxis()->SetTitle(TString::Format("H^{%i}(%i%i)",alpha,L,M).Data());
                 moments_raw.Draw("nostack noclear E1 X0");
+                line.Draw();
                 legend_raw.Draw();
                 canvas_raw.SaveAs(TString::Format("%s/H_%i_%i_%i_raw.png",output_dir.Data(), alpha, L, M));
             }
